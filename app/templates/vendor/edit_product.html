@@ -1,0 +1,17 @@
+<!-- edit_product.html -->
+{% extends "vendor/base.html" %}
+
+{% block content %}
+    <h1>Edit {{product.name}}</h1>
+    <form method="post">
+        <input type="text" name="name" placeholder="Product Name" value="{{ product.name }}" required>
+        <input type="text" name="description" placeholder="Description" value="{{ product.description }}">
+        <input type="number" name="price" step="0.01" placeholder="Price" value="{{ product.price }}" required>
+        <input type="number" name="stock" placeholder="Stock" value="{{ product.stock }}" required>
+        <input type="text" name="category" placeholder="Category" value="{{ product.category }}">
+        <input type="text" name="image_url" placeholder="Image URL" value="{{ product.image_url }}">
+        <input type="text" name="preview_url" placeholder="Preview URL" value="{{ product.preview_url }}">
+        <button type="submit">Update Product</button>
+    </form>
+    <img src="{{product.image_url}}" alt="">
+{% endblock %}

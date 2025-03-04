@@ -1,0 +1,30 @@
+<!-- orders.html -->
+{% extends "vendor/base.html" %}
+
+{% block content %}
+    <h1>Orders</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th>Total Price</th>
+                <th>Date</th>
+                <th>Customer</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.status }}</td>
+                <td>${{ order.total_amount }}</td>
+                <td>{{ order.created_at }}</td>
+                <td>{{ order.phone_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+{% endblock %}
+

@@ -1,0 +1,41 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+    <h2>Checkout</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Modify</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category, items in cart_summary.items() %}
+                {% if category != "TotalCost" %}
+                    <tr>
+                        <td rowspan="{{ items|length }}">{{ category }}</td>
+                        {% for item in items %}
+                            {% if not loop.first %}<tr>{% endif %}
+                                <td>{{ item["name"] }}</td>
+                                <td>{{ item["quantity"] }}</td>
+                                <td>${{ item["price"] }}</td>
+                                <td><a href="{{ url_for('shop.specific_product', product_id=item['product_id']) }}">Modify</a></td>
+                            </tr>
+                        {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total Cost:</strong></td>
+                <td colspan="2"><strong>${{ cart_summary["TotalCost"] }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    
+{% endblock %}

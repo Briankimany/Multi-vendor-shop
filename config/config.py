@@ -1,0 +1,60 @@
+# config.py
+
+import json
+import os
+from pathlib import Path
+from abc import ABC, abstractmethod
+
+DEFAULT_SETTINGS = {
+    "database_url": "vendor_project.db",
+    "log_file": "/var/logs/vendor_project.log",
+    "debug": True,
+    "uploads_dir": "./uploads"
+}
+
+class Config(ABC):
+    def __init__(self, json_path: str, default_data = None):
+        self.json_path = Path(json_path)
+        self.default_data = default_data if default_data else DEFAULT_SETTINGS 
+        
+        if not self.json_path.exists():
+            self.__save__(self.default_data)
+            self._load_attributes(self.default_data)
+        else:
+            self.__load__()
+
+    @abstractmethod
+    def __load__(self):
+        """Load configuration from the given  file path."""
+        pass
+    
+    def _load_attributes(self, data: dict):
+        """Set class attributes from a dictionary, converting paths where necessary."""
+        for key, value in data.items():
+            if  isinstance(value, str):
+                if Path(value).suffix in ['.db', '.log']:
+                    value = Path(value)
+            setattr(self, key, value)
+            
+    @abstractmethod
+    def __save__(self, data: dict):
+        """Save dictionary to a file."""
+        pass
+
+
+class JSONConfig(Config):
+    def __load__(self):
+        """Implementation of abstract method to load JSON data and set attributes."""
+        with open(self.json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self._load_attributes(data)
+    def __save__(self, data: dict):
+        """Save dictionary data to JSON file."""
+        with open(self.json_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+JSONConfig('config.json')
+
+
+
+

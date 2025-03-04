@@ -1,0 +1,75 @@
+{% extends "vendor/base.html" %}
+{% block content %}
+<div class="dashboard-container">
+    <h1>Vendor Dashboard</h1>
+    
+    <!-- Summary Section -->
+    <div class="dashboard-summary">
+        <div class="card">
+            <h3>Total Products</h3>
+            <p>{{ summary.total_products }}</p>
+        </div>
+        <div class="card">
+            <h3>Total Orders</h3>
+            <p>{{ summary.total_orders }}</p>
+        </div>
+        <div class="card">
+            <h3>Pending Orders</h3>
+            <p>{{ summary.pending_orders }}</p>
+        </div>
+        <div class="card">
+            <h3>Total Revenue</h3>
+            <p>${{ summary.total_revenue }}</p>
+        </div>
+        <div class="card">
+            <h3>Completed Orders</h3>
+            <p>{{ summary.completed_orders }}</p>
+        </div>
+    </div>
+    
+    <!-- Recent Orders -->
+    <h2>Recent Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th>Total Price</th>
+                <th>Date</th>
+                <th>Customer</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in recent_orders %}
+            <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.status }}</td>
+                <td>${{ order.total_amount }}</td>
+                <td>{{ order.created_at }}</td>
+                <td>{{ order.phone_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Low Stock Alerts -->
+    <h2>Low Stock Alerts</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Stock Left</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in low_stock_products %}
+            <tr>
+                <td>{{ product.name }}</td>
+                <td>{{ product.stock }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+</div>
+{% endblock %}

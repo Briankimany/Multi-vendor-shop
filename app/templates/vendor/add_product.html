@@ -1,0 +1,17 @@
+<!-- add_product.html -->
+{% extends "vendor/base.html" %}
+
+{% block content %}
+    <h1>Add Product</h1>
+    <form method="post">
+        <input type="text" name="name" placeholder="Product Name" required>
+        <input type="text" name="description" placeholder="Description">
+        <input type="number" name="price" step="0.01" placeholder="Price" required>
+        <input type="number" name="stock" placeholder="Stock" required>
+        <input type="text" name="category" placeholder="Category">
+        <input type="text" name="image_url" placeholder="Image URL">
+        <input type="text" name="preview_url" placeholder="Preview URL">
+        <button type="submit">Add Product</button>
+    </form>
+{% endblock %}
+

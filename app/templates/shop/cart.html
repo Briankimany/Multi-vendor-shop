@@ -1,0 +1,60 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+    <h2>Your Cart</h2>
+    {% if cart_items %}
+        <ul id="cart-list">
+            {% for item in cart_items %}
+                <li>
+                    {{ item.product.name }} - ${{ item.product.price }} 
+                    x 
+                    <input type="number" class="quantity-input" 
+                           data-product-id="{{ item.product.id }}" 
+                           value="{{ item.quantity }}" min="1">
+                    
+                    <img src="{{ item.product.image_url }}" alt="">
+                    
+                    <form action="{{ url_for('shop.remove_from_cart', product_id=item.product.id) }}" method="POST">
+                        <button type="submit">Remove</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <button id="update-cart-btn">Update Cart</button>
+
+        <a href="{{ url_for('shop.checkout') }}">Proceed to Checkout</a>
+    {% else %}
+        <p>Your cart is empty.</p>
+    {% endif %}
+
+    <script>
+        document.getElementById("update-cart-btn").addEventListener("click", function () {
+            let quantities = {};
+
+            document.querySelectorAll(".quantity-input").forEach(input => {
+                let productId = input.dataset.productId;
+                let quantity = input.value;
+                quantities[productId] = quantity;
+            });
+
+            fetch("{{ url_for('shop.update_cart') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ quantities: quantities })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(error => console.error("Error updating cart:", error));
+        });
+    </script>
+{% endblock %}

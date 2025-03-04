@@ -1,0 +1,186 @@
+from .database_index import Database , PayoutModel , OrderModel , ProductModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+class VendorObj:
+    """
+    Manages vendor-related operations, including updating details, verifying vendors, 
+    adding/viewing products, tracking orders, and managing payouts.
+    """
+
+    def __init__(self, vendor_id, db_session:Session):
+        """
+        Initializes the Vendor instance.
+
+        Args:
+            vendor_id (int): The unique identifier of the vendor.
+            db_session (Session): The database session instance.
+        """
+        self.vendor_id = vendor_id
+        self.db = Database(session=db_session)
+
+    @staticmethod
+    def get_all_vendors(db_session:Session):
+        return Database(db_session).get_all_vendors()
+    def update_details(self,**update_data):
+        """
+        Updates vendor details.
+
+        Args:
+            name (str, optional): Vendor's name.
+            email (str, optional): Vendor's email address.
+            phone (str, optional): Vendor's contact number.
+            address (str, optional): Vendor's physical or business address.
+            verified (bool, optional): Vendor verification status (True = verified, False = unverified).
+
+        Returns:
+            str: Confirmation message indicating update success.
+        """
+        self.db.update_vendor(self.vendor_id, **update_data)
+        return "Vendor details updated."
+
+    def verify(self):
+        """
+        Verifies the vendor if not already verified.
+
+        Returns:
+            bool: True if verification is successful, False if already verified.
+        """
+        vendor = self.db.get_vendor(self.vendor_id)
+        if vendor and vendor.verified:
+            return False  # Already verified
+        return self.db.verify_vendor(self.vendor_id)
+
+    def add_product(self, name, price, product_type, description=None, stock=None, category=None, image_url=None, preview_url=None):
+        """
+        Adds a new product for the vendor.
+
+        Args:
+            name (str): Name of the product.
+            price (float): Price of the product.
+            product_type (int): Type of product (0 for Physical, 1 for Service).
+            description (str, optional): Brief description of the product.
+            stock (int, optional): Quantity available (only for physical products).
+            category (str, optional): Category or classification of the product.
+            image_url (str, optional): URL of the product image.
+            preview_url (str, optional): URL for product preview (if applicable).
+
+        Returns:
+            int: The ID of the newly added product.
+        """
+        product = {k: v for k, v in locals().items() if k != "self" and v is not None}
+        product["vendor_id"] = self.vendor_id  # Ensure vendor association
+        return self.db.add_product(product)
+    def modify_products(self, products_data:list[dict]):
+        """
+        Modifies multiple products based on provided data.
+
+        Args:
+            products_data (list[dict]): A list of dictionaries, where each dictionary contains:
+                - id (int): The unique identifier of the product to be modified.
+                - data (dict): Key-value pairs representing the product attributes to update.
+                Allowed keys include:
+                    - name (str, optional): Updated name of the product.
+                    - price (float, optional): Updated price of the product.
+                    - product_type (int, optional): Updated product type (0 for Physical, 1 for Service).
+                    - description (str, optional): Updated product description.
+                    - stock (int, optional): Updated stock quantity (only for physical products).
+                    - category (str, optional): Updated product category.
+                    - image_url (str, optional): Updated URL of the product image.
+                    - preview_url (str, optional): Updated URL for product preview.
+
+        Returns:
+            list: A list containing the results of each product modification operation.
+        """
+        results = []
+        for product_data in products_data:
+            product_id = product_data['id']
+            data = product_data['data']
+            results.append(self.db.modify_product(product_id , data))
+        return results
+        
+    def view_products(self):
+        """
+        Retrieves all products listed by the vendor.
+
+        Returns:
+            list: A list of product objects associated with the vendor.
+        """
+        return self.db.get_vendor_products(self.vendor_id)
+    def get_product(self, product_key, value, occurrence="first"):
+        """
+        Retrieve a product based on a specified key-value pair.
+
+        This method queries the database to fetch a product where the specified 
+        column (key) matches the given value. The occurrence parameter determines 
+        whether to return the first matching result or all occurrences.
+
+        Args:
+            product_key (str): The column name to filter by (e.g., 'id', 'name').
+            value (Any): The value to match in the specified column.
+            occurrence (str, optional): Determines which result to return. 
+                - 'first': Returns the first matching product.
+                - 'all': Returns all matching products as a list.
+                Defaults to 'first'.
+
+        Returns:
+            ProductModel or list[ProductModel] or None: 
+                - A single product object if 'first' and a match is found.
+                - A list of matching product objects if 'all'.
+                - None if no match is found.
+        """
+        return self.db.get_product_by_key_val(key=product_key, val=value, occurrence=occurrence)
+
+
+    def track_orders(self):
+        """
+        Retrieves all orders associated with the vendor.
+
+        Returns:
+            list: A list of order objects.
+        """
+        return self.db.get_vendor_orders(self.vendor_id)
+
+    def manage_payouts(self):
+        """
+        Retrieves all payout requests made by the vendor.
+
+        Returns:
+            list: A list of payout objects.
+        """
+        return self.db.get_payouts(self.vendor_id)
+
+
+    
+
+
+    def get_dashboard_data(self):
+
+        """Fetch summary statistics for the vendor dashboard."""
+        vendor_id = self.vendor_id
+        return {
+            "total_products": self.db.session.query(func.count(ProductModel.id)).filter_by(vendor_id=vendor_id).scalar(),
+            "total_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id).scalar(),
+            "pending_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Pending").scalar(),
+            "completed_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Completed").scalar(),
+            "total_revenue": self.db.session.query(func.coalesce(func.sum(OrderModel.total_amount), 0)).filter_by(vendor_id=vendor_id).scalar(),
+        }
+
+    def get_recent_orders(self, limit=5):
+        """Fetch recent orders."""
+        vendor_id = self.vendor_id
+        return (
+            self.db.session.query(OrderModel)
+                        .filter_by(vendor_id=vendor_id)
+                        .order_by(OrderModel.created_at.desc())
+                        .limit(limit)
+                        .all()
+        )
+
+    def get_low_stock_products(self , threshold=5):
+        """Fetch low-stock products."""
+        vendor_id = self.vendor_id
+        return (
+            self.db.session.query(ProductModel.name, ProductModel.stock)
+            .filter( ProductModel.stock != None ,ProductModel.vendor_id == vendor_id, ProductModel.stock <= threshold).all()
+    )
+

@@ -1,0 +1,17 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Available Vendors{% endblock %}
+
+{% block content %}
+    <h2>Available Vendors</h2>
+    <div>
+        {% for vendor in vendors %}
+            <div>
+                <img src="{{ vendor.store_logo }}" alt="{{ vendor.name }}" width="100">
+                <h3>{{ vendor.name }}</h3>
+                <p>{{ vendor.description }}</p>
+                <a href="{{ url_for('shop.vendor_products', vendor_id=vendor.id) }}">View Products</a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

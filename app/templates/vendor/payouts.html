@@ -1,0 +1,26 @@
+<!-- payouts.html -->
+{% extends "vendor/base.html" %}
+
+{% block content %}
+    <h1>Payouts</h1>
+    <table>
+        <thead>
+            <tr>
+                <th> ID</th>
+                <th>Total Price</th>
+                <th>Date</th>
+                <th>Transaction reference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payout in payouts %}
+            <tr>
+                <td>#{{ payout.id }}</td>
+                <td>${{ payout.amount }}</td>
+                <td>{{ payout.created_at }}</td>
+                <td>{{ payout.transaction_ref }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,6 @@
+{
+    "database_url": "vendor_project.db",
+    "log_file": "/var/logs/vendor_project.log",
+    "debug": true,
+    "uploads_dir": "./uploads"
+}
