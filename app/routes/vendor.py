@@ -37,7 +37,7 @@ def dashboard():
         return redirect(url_for("vendor.login"))
     vendor = VendorObj(session['vendor_id'], db_session=db_session)
     return render_template(
-        "vendor/dashboard.html",
+        "vendor/dashboard2.html",
         summary=vendor.get_dashboard_data(),
         recent_orders=vendor.get_recent_orders(),
         low_stock_products=vendor.get_low_stock_products(),

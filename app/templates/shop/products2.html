@@ -1,0 +1,187 @@
+
+{% extends "shop/base2.html" %}
+
+{% block title %}Vendor Products{% endblock %}
+
+{% block content %}
+    <h2>{{ vendor.name }}</h2>
+    <div id="product-list">
+        {% for product in products %}
+            <div class="product-item">
+                <a href="{{ url_for('shop.specific_product', product_id=product.id) }}" class="product-link"></a>
+                <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                <h3>{{ product.name }}</h3>
+                <p>Price: ${{ product.price }}</p>
+
+                <input type="number" class="quantity-input" id="quantity-{{ product.id }}" value="1" min="1">
+                <button class="add-to-cart" data-product-id="{{ product.id }}">Add to Cart</button>
+            </div>
+        {% endfor %}
+    </div>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container */
+        #product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        /* Product Card */
+        .product-item {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .product-item:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Product Image */
+        .product-item img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        /* Product Name */
+        .product-item h3 {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        /* Product Price */
+        .product-item p {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e60023;
+        }
+
+        /* Buttons */
+        .add-to-cart {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease-in-out;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .add-to-cart:hover {
+            background-color: #e68900;
+        }
+
+        /* Quantity Input */
+        .quantity-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        /* Links */
+        a {
+            text-decoration: none;
+            color: #0073e6;
+            font-size: 14px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+        /* Make the whole product-item clickable */
+.product-item {
+    position: relative;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+.product-item:hover {
+    transform: translateY(-5px);
+}
+
+/* Invisible link covering the entire card */
+.product-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Ensure buttons and inputs remain clickable */
+.add-to-cart, .quantity-input {
+    position: relative;
+    z-index: 2;
+}
+
+
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cartButtons = document.querySelectorAll(".add-to-cart");
+
+            cartButtons.forEach(button => {
+                button.addEventListener("click", function () {
+                    const productId = this.getAttribute("data-product-id");
+                    const quantityInput = document.getElementById("quantity-" + productId);
+                    const quantity = quantityInput.value;
+
+                    fetch("{{ url_for('shop.add_to_cart') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                    
+                        },
+                        body: JSON.stringify({
+                            product_id: productId,
+                            quantity: quantity
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const messageDiv = document.getElementById("cart-message");
+                            messageDiv.innerText = "Added to cart successfully!";
+                            messageDiv.style.display = "block";
+                            setTimeout(() => messageDiv.style.display = "none", 2000);
+                        } else {
+                            alert("Failed to add to cart: " + data.error);
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+                });
+            });
+        });
+    </script>
+{% endblock %}

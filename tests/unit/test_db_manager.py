@@ -27,7 +27,8 @@ def newentry():
         store_name="Tech Haven Store",
         store_description="Your one-stop shop for all tech gadgets.",
         verified=True,
-        store_logo = "https://img401.picturelol.com/th/67769/9rxu5xjquw3l.jpg"
+        store_logo = "https://img401.picturelol.com/th/67769/9rxu5xjquw3l.jpg",
+        payment_type =  'pre-delivery'
     )
     session.add(vendor)
     session.commit()
@@ -41,7 +42,8 @@ def newentry():
         stock=10,
         category="Electronics",
         image_url="https://example.com/laptop.jpg",
-        preview_url="https://example.com/laptop_preview.mp4"
+        preview_url="https://example.com/laptop_preview.mp4",
+       
     )
     session.add(product)
     session.commit()
@@ -57,7 +59,7 @@ def newentry():
     session.commit()
 
 
-    cart = Cart(user_id=user.id)
+    cart = Cart(user_id=user.id , session_tkn ="akdflsjdflsjdfjlsdjfitj")
     session.add(cart)
     session.commit()
 
@@ -72,7 +74,8 @@ def newentry():
         total_amount=product.price,
         status="pending",
         payment_type="pre-delivery",
-        vendor_id=vendor.id
+        vendor_id=vendor.id,
+        session = "akdflsjdflsjdfjlsdjfitj"
     )
     session.add(order)
     session.commit()

@@ -1,6 +1,11 @@
 from .database_index import Database , PayoutModel , OrderModel , ProductModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+import requests
+from config.config import JSONConfig
+import json
+import time
+
 class VendorObj:
     """
     Manages vendor-related operations, including updating details, verifying vendors, 
@@ -16,7 +21,10 @@ class VendorObj:
             db_session (Session): The database session instance.
         """
         self.vendor_id = vendor_id
+
         self.db = Database(session=db_session)
+        self.vendor_table = self.db.get_vendor(vendor_id=vendor_id)
+        self.config = JSONConfig(json_path="config.json")
 
     @staticmethod
     def get_all_vendors(db_session:Session):
@@ -183,4 +191,44 @@ class VendorObj:
             self.db.session.query(ProductModel.name, ProductModel.stock)
             .filter( ProductModel.stock != None ,ProductModel.vendor_id == vendor_id, ProductModel.stock <= threshold).all()
     )
+    
+    def collect_payment(self ,phone , amount ,orderid):
+        try:
+            url = self.config.payment_url
+            AUTHKEY = self.config.authkey
+            headers = {"Authorization": f"Bearer {AUTHKEY}" ,
+                    "Content-Type": "application/json"}
+            payload = json.dumps({'phone':phone , "amount":amount , 'orderid':orderid})
+        
+            response = requests.post(url=url +"/pay" , data=payload , headers = headers , timeout=7)
+    
+            data = {'code':response.status_code , 'invoiceid':response.json().get("response")}
+            in_voice_id = data["invoiceid"]["invoice"]["invoice_id"]
+            # print(data)
+            # print(in_voice_id)
+            print("Giving time for request to reach server")
+            time.sleep(5)
+            print("Done starting the status check loop")
+            if response.status_code != 200:
+                print("Got invalid response" , response.content)
+                return False
+            for i in range(5):
+                response = requests.get(url=url +f'/check-status/{in_voice_id}' , 
+                                        headers = headers , data=json.dumps({"SIMULATE":True , "MAXRETRIES":4}))
+
+                code = response.status_code
+                status = response.json().get('MESSAGE')
+                print("response from checking status")
+                print (code , status)
+                if status ==  "COMPLETE":
+                    return 'paid'
+                elif status == "FAILED":
+                    return 'canceled'
+                else:
+                    time.sleep(2)
+            return 'pending'
+        except Exception as e:
+            print(e)
+            return None
+        
 

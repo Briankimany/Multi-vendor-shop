@@ -6,7 +6,6 @@ from .cart import Cart
 
 class SessionTracking(Base):
     __tablename__ = 'session_tracking'
-    
     token = Column(String, primary_key=True, unique=True, nullable=False)
     expires_at = Column(DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(hours=12))
     cart_id = Column(Integer, ForeignKey(Cart.id), nullable=False)

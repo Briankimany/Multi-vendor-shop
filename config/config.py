@@ -4,19 +4,24 @@ import json
 import os
 from pathlib import Path
 from abc import ABC, abstractmethod
+from dotenv import load_dotenv
 
+load_dotenv()
+authkey = os.getenv("AUTHKEY")
 DEFAULT_SETTINGS = {
     "database_url": "vendor_project.db",
     "log_file": "/var/logs/vendor_project.log",
     "debug": True,
-    "uploads_dir": "./uploads"
+    "uploads_dir": "./uploads",
+    "payment_url": "http://playpit.pythonanywhere.com"
 }
 
 class Config(ABC):
     def __init__(self, json_path: str, default_data = None):
         self.json_path = Path(json_path)
         self.default_data = default_data if default_data else DEFAULT_SETTINGS 
-        
+        self.authkey = authkey
+
         if not self.json_path.exists():
             self.__save__(self.default_data)
             self._load_attributes(self.default_data)

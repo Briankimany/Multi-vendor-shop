@@ -4,11 +4,12 @@ from sqlalchemy.sql import func
 from .base import Base
 from .user_profile import UserProfile 
 from .vendor import Vendor
-
+from .session_tracking import SessionTracking
 class Order(Base):
     __tablename__ = 'orders'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
+    session = Column(String , ForeignKey(SessionTracking.token),nullable = False)
     user_id = Column(Integer, ForeignKey(UserProfile.id), nullable=True)
     phone_number = Column(String, nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False)

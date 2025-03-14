@@ -1,35 +1,113 @@
-{% extends "shop/base.html" %}
+{% extends "shop/base2.html" %}
 
 {% block title %}Cart{% endblock %}
 
 {% block content %}
+<div class="cart-container">
     <h2>Your Cart</h2>
     {% if cart_items %}
-        <ul id="cart-list">
+        <div class="cart-grid">
             {% for item in cart_items %}
-                <li>
-                    {{ item.product.name }} - ${{ item.product.price }} 
-                    x 
-                    <input type="number" class="quantity-input" 
-                           data-product-id="{{ item.product.id }}" 
-                           value="{{ item.quantity }}" min="1">
-                    
-                    <img src="{{ item.product.image_url }}" alt="">
-                    
-                    <form action="{{ url_for('shop.remove_from_cart', product_id=item.product.id) }}" method="POST">
-                        <button type="submit">Remove</button>
-                    </form>
-                </li>
+                <div class="cart-item">
+                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="cart-img">
+                    <div class="cart-details">
+                        <h3>{{ item.product.name }}</h3>
+                        <p>${{ item.product.price }}</p>
+                        <input type="number" class="quantity-input" 
+                               data-product-id="{{ item.product.id }}" 
+                               value="{{ item.quantity }}" min="1">
+                    </div>
+                    <button class="remove-btn" data-product-id="{{ item.product.id }}">Remove</button>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
 
-        <button id="update-cart-btn">Update Cart</button>
-
-        <a href="{{ url_for('shop.checkout') }}">Proceed to Checkout</a>
+        <button id="update-cart-btn" class="cart-action-btn">Update Cart</button>
+        <a href="{{ url_for('shop.checkout') }}" class="checkout-btn">Proceed to Checkout</a>
     {% else %}
-        <p>Your cart is empty.</p>
+        <p class="empty-cart">Your cart is empty.</p>
     {% endif %}
+</div>
+    <style>
+        .cart-container {
+    max-width: 800px;
+    margin: auto;
+    text-align: center;
+}
 
+.cart-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+.cart-img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.cart-details {
+    flex-grow: 1;
+    text-align: left;
+    padding: 0 15px;
+}
+
+.quantity-input {
+    width: 50px;
+    padding: 5px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.remove-btn, .cart-action-btn, .checkout-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.remove-btn:hover {
+    background: #cc0000;
+}
+
+.cart-action-btn {
+    background: #007bff;
+}
+
+.checkout-btn {
+    display: inline-block;
+    margin-top: 10px;
+    background: #28a745;
+    text-decoration: none;
+    padding: 10px 20px;
+}
+
+.checkout-btn:hover {
+    background: #218838;
+}
+
+.empty-cart {
+    font-size: 18px;
+    color: #666;
+}
+
+    </style>
     <script>
         document.getElementById("update-cart-btn").addEventListener("click", function () {
             let quantities = {};
@@ -57,4 +135,33 @@
             .catch(error => console.error("Error updating cart:", error));
         });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".remove-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                const productId = this.dataset.productId;
+
+                fetch("{{ url_for('shop.remove_from_cart') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ product_id: productId }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    // Reload page or remove item from DOM
+                    location.reload();
+                })
+                .catch(error => console.error("Error:", error));
+            });
+        });
+    });
+
+    </script>
+{% endblock %}
+
+{% block name %}
+Playpit
 {% endblock %}

@@ -20,7 +20,7 @@
 #     quantity = Column(Integer, nullable=False)
 #     created_at = Column(TIMESTAMP, server_default=func.now())
 # cart.py
-from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean
+from sqlalchemy import Column, Integer, ForeignKey, TIMESTAMP, Boolean , String
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -33,6 +33,7 @@ class Cart(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey(UserProfile.id), nullable=True)  
+    session_tkn = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)  
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

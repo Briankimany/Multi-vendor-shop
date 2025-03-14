@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.session_tracking import SessionTracking
 from app.models.cart import Cart as CartModel ,CartItem
 from app.models.cart import Cart
+from app.models.product import Product as ProductModel
 import uuid
 from datetime import datetime, timedelta
 import requests
@@ -16,7 +17,7 @@ class SessionManager:
         new_token = SessionManager.generate_token()
         
         # Create a new cart
-        new_cart = Cart(user_id=user_id)
+        new_cart = Cart(user_id=user_id ,session_tkn = new_token)
         self.db_session.add(new_cart)
         self.db_session.commit()  # Ensure cart ID is generated
         
@@ -36,9 +37,9 @@ class SessionManager:
         
         return new_session.token  # Return session token for reference
 
-    def create_cart(self , user_id):
+    def create_cart(self , user_id, session_tkn):
         """Creates a new empty cart and returns its ID."""
-        new_cart = CartModel(user_id=user_id)
+        new_cart = CartModel(user_id=user_id ,session_tkn=session_tkn)
         self.db_session.add(new_cart)
         self.db_session.commit()
         return new_cart.id
@@ -46,11 +47,36 @@ class SessionManager:
     def get_cart(self, session_token):
         """Retrieves the cart associated with a session token."""
         session = self.db_session.query(SessionTracking).filter_by(token=session_token).first()
-        return session.cart_id if session else None
+        if session:
+            cart = self.db_session.query(CartModel).filter_by(id=session.cart_id).first()
+            if cart.is_active:
+                return session.cart_id
+            else:
+                cartid = self.create_cart(user_id=cart.user_id , session_tkn=session_token)
+                session.cart_id = cartid
+                self.db_session.commit()
+                return cartid
+        else:
+            return None
+        
+    def verify_cart_not_Checked_out(self , cart_id):
+        cart = self.db_session.query(CartModel).filter_by(id = cart_id).first()
+        return cart.is_active
+    
+    def verify_available_stock(self , product_id ,stock):
+        product = self.db_session.query(ProductModel).where(ProductModel.id == product_id).first()
+        if product.category in ['Services']:
+            return True
+        return product.stock >=stock
 
     def add_to_cart(self, session_token, product_id, quantity=1):
         """Adds an item to the user's cart."""
         cart_id = self.get_cart(session_token)
+      
+        stock_available = self.verify_available_stock(product_id , quantity)
+        if not stock_available:
+            return {"status":"error" ,"reason":"Max stock exceded"}
+     
         if cart_id:
             existing_item = self.db_session.query(CartItem).filter_by(cart_id=cart_id, product_id=product_id).first()
             if existing_item:
@@ -59,19 +85,14 @@ class SessionManager:
                 new_item = CartItem(cart_id=cart_id, product_id=product_id, quantity=quantity)
                 self.db_session.add(new_item)
             self.db_session.commit()
+        return {"status":"added" ,"reason":None}
 
     def remove_from_cart(self, session_token, product_id):
         """Removes an item from the user's cart."""
         cart_id = self.get_cart(session_token)
-        if cart_id:
-            self.db_session.query(CartModel).filter_by(id=cart_id).delete()
-            self.db_session.commit()
-            cartitems = self.db_session.query(CartItem).where(CartItem.cart_id == cart_id).all()
-            for item in cartitems:
-                self.db_session.query(CartItem).where(CartItem.id == item.id).delete()
-                self.db_session.commit()
-
-
+        self.db_session.query(CartItem).where(CartItem.cart_id == cart_id , CartItem.product_id == product_id).delete()
+        self.db_session.commit()
+        
     def clear_cart(self, session_token):
         """Empties the user's cart."""
         cart_id = self.get_cart(session_token)
@@ -110,7 +131,19 @@ class SessionManager:
         if cart_item:
             cart_item.quantity = new_quantity
             self.db_session.commit()
-
+    def update_cart(self , cart_id , attribute ,new_value):
+        try:
+            cart = self.db_session.query(CartModel).filter_by(id = cart_id).first()
+            if cart:
+                setattr(cart , attribute , new_value)
+                self.db_session.commit()
+                return True
+            return False
+        except Exception as e:
+            print(e)
+            self.db_session.rollback()
+            return None
+    
     def get_geo_data(self, ip_address):
         """Fetches geo-location data based on IP address."""
         try:
@@ -138,3 +171,8 @@ class SessionManager:
     def get_ip_address(request):
         """Retrieves the user's IP address."""
         return request.headers.get("X-Forwarded-For", request.remote_addr)
+    @staticmethod
+    def get_userid_associated_with_tkn(db_session :Session, session_token):
+        session = db_session.query(SessionTracking).filter_by(token=session_token).first()
+        if session:
+            return session.user_id

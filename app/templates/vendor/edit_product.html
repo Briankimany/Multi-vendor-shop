@@ -1,17 +1,145 @@
-<!-- edit_product.html -->
 {% extends "vendor/base.html" %}
 
 {% block content %}
-    <h1>Edit {{product.name}}</h1>
-    <form method="post">
-        <input type="text" name="name" placeholder="Product Name" value="{{ product.name }}" required>
-        <input type="text" name="description" placeholder="Description" value="{{ product.description }}">
-        <input type="number" name="price" step="0.01" placeholder="Price" value="{{ product.price }}" required>
-        <input type="number" name="stock" placeholder="Stock" value="{{ product.stock }}" required>
-        <input type="text" name="category" placeholder="Category" value="{{ product.category }}">
-        <input type="text" name="image_url" placeholder="Image URL" value="{{ product.image_url }}">
-        <input type="text" name="preview_url" placeholder="Preview URL" value="{{ product.preview_url }}">
-        <button type="submit">Update Product</button>
-    </form>
-    <img src="{{product.image_url}}" alt="">
+<div class="edit-product-container">
+    <h1>Edit Product: {{ product.name }}</h1>
+
+    <div class="edit-form-wrapper">
+        <form method="post" class="edit-product-form">
+            <!-- Product Name -->
+            <label for="name">Product Name</label>
+            <input type="text" id="name" name="name" value="{{ product.name }}" required>
+
+            <!-- Description -->
+            <label for="description">Description</label>
+            <textarea id="description" name="description" placeholder="Product Description">{{ product.description }}</textarea>
+
+            <!-- Price -->
+            <label for="price">Price ($)</label>
+            <input type="number" id="price" name="price" step="0.01" value="{{ product.price }}" required>
+
+            <!-- Stock -->
+            <label for="stock">Stock</label>
+            <input type="number" id="stock" name="stock" value="{{ product.stock }}" required>
+
+            <!-- Category -->
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" value="{{ product.category }}">
+
+            <!-- Image URL -->
+            <label for="image_url">Image URL</label>
+            <input type="text" id="image_url" name="image_url" value="{{ product.image_url }}">
+
+            <!-- Preview URL -->
+            <label for="preview_url">Preview URL</label>
+            <input type="text" id="preview_url" name="preview_url" value="{{ product.preview_url }}">
+
+            <!-- Submit Button -->
+            <button type="submit" class="update-button">Update Product</button>
+        </form>
+
+        <!-- Image Preview -->
+        <div class="image-preview">
+            <h3>Current Product Image</h3>
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        </div>
+    </div>
+</div>
+<style>
+    /* Main Container */
+.edit-product-container {
+    width: 90%;
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Title */
+.edit-product-container h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Form & Image Layout */
+.edit-form-wrapper {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+/* Form Styling */
+.edit-product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.edit-product-form label {
+    font-weight: bold;
+    color: #333;
+}
+
+.edit-product-form input,
+.edit-product-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.edit-product-form textarea {
+    height: 80px;
+    resize: vertical;
+}
+
+/* Update Button */
+.update-button {
+    background: #007bff;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.update-button:hover {
+    background: #0056b3;
+}
+
+/* Image Preview */
+.image-preview {
+    text-align: center;
+}
+
+.image-preview h3 {
+    margin-bottom: 10px;
+}
+
+.image-preview img {
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    border-radius: 5px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .edit-form-wrapper {
+        display: block;
+    }
+
+    .image-preview {
+        margin-top: 20px;
+    }
+}
+
+</style>
 {% endblock %}

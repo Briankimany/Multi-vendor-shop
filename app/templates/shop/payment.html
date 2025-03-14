@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Confirm Payment</h2>
+        <form id="payment-form">
+            <label for="phone">Phone Number:</label>
+            <input type="text" id="phone" name="phone" placeholder="Enter phone number" required>
+
+            <label for="amount">Amount:</label>
+            <input type="text" id="amount" name="amount" value="{{ total_cost }}" readonly>
+
+            <button type="button" id="confirm-btn">Confirm Payment</button>
+        </form>
+
+        <div id="loading" class="loading-spinner"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+</body>
+</html>
+
