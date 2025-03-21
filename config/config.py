@@ -13,7 +13,10 @@ DEFAULT_SETTINGS = {
     "log_file": "/var/logs/vendor_project.log",
     "debug": True,
     "uploads_dir": "./uploads",
-    "payment_url": "http://playpit.pythonanywhere.com"
+    "payment_url": "http://playpit.pythonanywhere.com",
+    "DELAY_BEFORE_STATUS_CHECK":2,
+    "MAX_RETIRES":3,
+    "SIMULATE": True
 }
 
 class Config(ABC):

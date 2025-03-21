@@ -1,44 +1,210 @@
-{% extends "vendor/base.html" %}
+{% extends "vendor/base2.html" %}
 
 {% block title %}My Products{% endblock %}
 
 {% block content %}
     <div class="container mt-4">
-        <h2 class="mb-3">My Products</h2>
-        <a href="{{ url_for('vendor.add_product') }}" class="btn btn-primary mb-3">Add New Product</a>
-        
+        <h2 class="mb-3 page-title">My Products</h2>
+        <a href="{{ url_for('vendor.add_product') }}" class="btn btn-primary btn-add">Add New Product</a>
+
         {% if products %}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Category</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
+            <!-- TABLE FOR LARGE SCREENS -->
+            <div class="table-wrapper table">
+                <table class="styled-table">
+                    <thead>
                         <tr>
-                            <td>{{ product.name }}</td>
-                            <td>{{ product.description }}</td>
-                            <td>${{ product.price }}</td>
-                            <td>{{ product.stock }}</td>
-                            <td>{{ product.category }}</td>
-                            <td>
-                                <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            </td>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Category</th>
+                            <th>Actions</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.description }}</td>
+                                <td>${{ product.price }}</td>
+                                <td>{{ product.stock }}</td>
+                                <td>{{ product.category }}</td>
+                                <td class="actions">
+                                    <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn btn-sm btn-warning btn-edit">Edit</a>
+                                    <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FLEX CARDS FOR SMALL SCREENS -->
+            <div class="table-wrapper cards">
+                {% for product in products %}
+                    <div class="product-card">
+                        <h3>{{ product.name }}</h3>
+                        <p><strong>Description:</strong> {{ product.description }}</p>
+                        <p><strong>Price:</strong> ${{ product.price }}</p>
+                        <p><strong>Stock:</strong> {{ product.stock }}</p>
+                        <p><strong>Category:</strong> {{ product.category }}</p>
+                        <div class="actions">
+                            <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn-edit">Edit</a>
+                            <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn-delete">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
-            <p>No products found.</p>
+            <p class="no-products">No products found.</p>
         {% endif %}
     </div>
+<style>
+    /* General Styles */
+.container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+/* Page Title */
+.page-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Add Button */
+.btn-add {
+    display: block;
+    width: fit-content;
+    padding: 12px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+    margin: 0 auto 20px auto;
+}
+
+.btn-add:hover {
+    background-color: #0056b3;
+}
+
+/* TABLE WRAPPER */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+}
+
+/* Styled Table */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    min-width: 800px; /* Keep structure */
+}
+
+/* Table Header */
+.styled-table thead {
+    background: #007bff;
+    color: white;
+}
+
+.styled-table th, .styled-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+/* FLEX CARDS (HIDDEN ON DESKTOP) */
+.table-wrapper.cards {
+    display: none; /* Hide cards by default */
+}
+
+/* MOBILE-FRIENDLY: HIDE TABLE & SHOW CARDS */
+@media (max-width: 768px) {
+    .table-wrapper.table {
+        display: none; /* Hide table on mobile */
+    }
+
+    .table-wrapper.cards {
+        display: flex; /* Show cards */
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .product-card {
+        width: 95%;
+        max-width: 400px;
+        background: white;
+        border-radius: 6px;
+        padding: 12px;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+        text-align: left;
+    }
+
+    .product-card h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .product-card p {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .btn-edit, .btn-delete {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s ease;
+        text-align: center;
+    }
+
+    .btn-edit {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .btn-edit:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+        margin-left: 5px;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+}
+
+</style>
 {% endblock %}

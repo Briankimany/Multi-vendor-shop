@@ -214,7 +214,7 @@ class VendorObj:
                 return False
             for i in range(5):
                 response = requests.get(url=url +f'/check-status/{in_voice_id}' , 
-                                        headers = headers , data=json.dumps({"SIMULATE":True , "MAXRETRIES":4}))
+                                        headers = headers , data=json.dumps({"SIMULATE":True , "MAXRETRIES":2}))
 
                 code = response.status_code
                 status = response.json().get('MESSAGE')

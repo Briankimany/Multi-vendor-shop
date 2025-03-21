@@ -3,5 +3,8 @@
 /__pychache__
 *.pyc
 .vscode/
-*.db
+*.db 
 test/
+*.logs
+/LOGS
+/tests

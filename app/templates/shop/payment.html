@@ -1,29 +1,32 @@
+{% extends "shop/base2.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h2>Confirm Payment</h2>
-        <form id="payment-form">
-            <label for="phone">Phone Number:</label>
-            <input type="text" id="phone" name="phone" placeholder="Enter phone number" required>
+{% block title %}Payment{% endblock %}
 
-            <label for="amount">Amount:</label>
-            <input type="text" id="amount" name="amount" value="{{ total_cost }}" readonly>
 
-            <button type="button" id="confirm-btn">Confirm Payment</button>
-        </form>
+{% block content %}
+<div class="container">
+    <h2>Confirm Payment</h2>
+    <form id="payment-form">
+        <label for="phone">Phone Number</label>
+        <input type="text" id="phone" name="phone" placeholder="Enter phone number" value="{{ phone if phone else '' }}" required>
 
-        <div id="loading" class="loading-spinner"></div>
+        <label for="amount">Amount:</label>
+        <input type="text" id="amount" name="amount" value="{{ total_cost }}" readonly>
+
+        <button type="button" id="confirm-btn">Confirm Payment</button>
+    </form>
+
+    <!-- 🔄 Loading Spinner & Status Message -->
+    <div id="loading-container" class="loading-container" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processing Payment...</p>
     </div>
-
-    <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
-</body>
-</html>
-
+    <div id="status-message"></div>
+</div>
+{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+{% endblock %}

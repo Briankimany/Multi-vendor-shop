@@ -1,0 +1,65 @@
+{% extends 'shop/base2.html' %}
+
+{% block content %}
+    <h2>Order History</h2>
+
+    {% if orders %}
+        <div class="orders-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Phone Number</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Payment Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.phone_number }}</td>
+                            <td>${{ "%.2f" | format(order.total_amount) }}</td>
+                            <td class="status {{ order.status }}">{{ order.status.capitalize() }}</td>
+                            <td>{{ "Pre-Delivery" if order.payment_type == "pre-delivery" else "Payment on Delivery" }}</td>
+                            <td>
+                                <button class="inspect-btn" data-order-id="{{ order.id }}">Inspect</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Order Items Modal -->
+        <div id="order-items-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h3>Order Details</h3>
+                <table class="order-items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price at Purchase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-items-body">
+                        <!-- Order items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user/orders.css') }}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+{% endblock %}

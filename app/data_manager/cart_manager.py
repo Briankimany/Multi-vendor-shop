@@ -2,10 +2,12 @@
 from sqlalchemy.orm import Session
 from app.models.order import Order
 from app.models.order_item import OrderItem
+from config.config import JSONConfig
 from .session_manager import SessionManager
 from .database_index import Database
-
+import json , requests ,time
 from sqlalchemy.exc import SQLAlchemyError
+from app.routes.logger import LOG
 
 class OrderManager:
     def __init__(self, db_session: Session, order_id):
@@ -22,7 +24,7 @@ class OrderManager:
         """
         self.db_session = db_session
         self.order = self.db_session.query(Order).where(Order.id == order_id).first() if not isinstance(order_id , Order) else order_id
-
+        self.config = JSONConfig(json_path="config.json")
     @staticmethod
     def get_order_by_session_tkn(db_session:Session , session_tkn):
         """
@@ -40,7 +42,7 @@ class OrderManager:
        
     @staticmethod
     def create_new_order(db_session:Session, session_tkn, phone_number=None, 
-                         total_amount=None, payment_type=None, vendor_id=None, items=[], user_id=None) :
+                         total_amount=None, payment_type=None, cart_id=None, items=[], user_id=None) :
         """
         Creates a new order if none exists for the given session token and inserts associated order items.
 
@@ -53,7 +55,7 @@ class OrderManager:
             phone_number (str, optional): The phone number of the customer placing the order.
             total_amount (Decimal, optional): The total cost of the order.
             payment_type (str, optional): The type of payment, either "pre-delivery" or "payment-on-delivery".
-            vendor_id (int, optional): The ID of the vendor fulfilling the order.
+            cart_id (int, optional): The ID of the cart fulfilling the order.
             items (list[dict], optional): A list of dictionaries, each containing:
                 - product_id (int): ID of the ordered product.
                 - quantity (int): Number of units ordered.
@@ -64,16 +66,17 @@ class OrderManager:
             OrderManager: An instance of `OrderManager` managing the newly created order.
             None: if creation fails.
         """
+        LOG.ORDER_LOGGER.info(f"Initiating order creation for session: {session_tkn}")
+
         order = OrderManager.get_order_by_session_tkn(db_session=db_session,session_tkn=session_tkn)
     
         try:
             if not order:
                 if not user_id:
                     user_id = SessionManager.get_userid_associated_with_tkn(db_session=db_session,session_token=session_tkn)
-                if not payment_type:
-                    vendor = Database(session=db_session).get_vendor(vendor_id=vendor_id)
-                    payment_type = vendor.payment_type
-                    
+        
+                LOG.ORDER_LOGGER.info(f"Creating a new order for session: {session_tkn}, user: {user_id}")
+            
                 new_order = Order(
                     session=session_tkn,
                     user_id=user_id,
@@ -81,12 +84,13 @@ class OrderManager:
                     total_amount=total_amount,
                     status="pending",  # Default status
                     payment_type=payment_type,
-                    vendor_id=vendor_id
+                    vendor_id=cart_id
                 )
                 db_session.add(new_order)
                 db_session.commit()  
 
-            
+                LOG.ORDER_LOGGER.info(f"New order created with ID: {new_order.id}")
+
                 order_items = [
                     OrderItem(
                         order_id=new_order.id,
@@ -96,13 +100,19 @@ class OrderManager:
                     )
                     for item in items
                 ]
+
+                LOG.ORDER_LOGGER.info(f"{len(items)} order items added for Order ID: {new_order.id}")
                 db_session.add_all(order_items)
                 db_session.commit()
                 order = new_order
+            else:
+                LOG.ORDER_LOGGER.info(f"Existing order found for session: {session_tkn}, Order ID: {order.id}")
+
             return OrderManager(db_session=db_session , order_id=order)
         except SQLAlchemyError as e:
             db_session.rollback()
-            print(f"Database Error: {e}")
+            LOG.ORDER_LOGGER.error(f"Database Error while creating order: {e}")
+            
             return None
         
     def get_order_details(self, include_items=True):
@@ -199,18 +209,78 @@ class OrderManager:
         Returns:
             bool: True if the update is successful, False otherwise.
          """
+        LOG.ORDER_LOGGER.info(f"Updating order {order_id} with fields: {kwargs}")
+
         if not self.order or self.order.id != order_id:
+            LOG.ORDER_LOGGER.warning(f"Order ID mismatch or order not found for update: {order_id}")
             return False
 
         try:
             for key, value in kwargs.items():
                 if hasattr(self.order, key):
+                    LOG.ORDER_LOGGER.debug(f"Updating {key} to {value} for order {order_id}")
                     setattr(self.order, key, value)
 
             self.db_session.commit()
+            LOG.ORDER_LOGGER.info(f"Order {order_id} updated successfully")
             return True
         except SQLAlchemyError as e:
             self.db_session.rollback()
-            print(f"Database Error: {e}")
+            LOG.ORDER_LOGGER.error(f"Database Error while updating order {order_id}: {e}")
             return False
 
+    
+    @staticmethod
+    def collect_payment(phone , amount ,orderid):
+        LOG.ORDER_LOGGER.info(f"Initiating payment collection for session : {orderid}, Phone: {phone}, Amount: {amount}")
+
+        try:
+            config = JSONConfig(json_path='config.json')
+            url = config.payment_url
+       
+            headers = {"Authorization": f"Bearer { config.authkey}", "Content-Type": "application/json"}
+            payload = json.dumps({'phone': phone, "amount": amount, 'orderid': orderid})
+
+            response = requests.post(url=url + "/pay", data=payload, headers=headers, timeout=7)
+            LOG.ORDER_LOGGER.info(f"Payment request sent for session : {orderid}, Status Code: {response.status_code}")
+
+            if response.status_code != 200:
+                LOG.ORDER_LOGGER.warning(f"Invalid payment response for session: {orderid}, Response: {response.content}")
+                return False
+
+            data = {'code': response.status_code, 'invoiceid': response.json().get("response")}
+            in_voice_id = data["invoiceid"]["invoice"]["invoice_id"]
+            
+            LOG.ORDER_LOGGER.info(f"Invoice ID {in_voice_id} generated for session: {orderid}. Waiting for status update.")
+
+            time.sleep(config.DELAY_BEFORE_STATUS_CHECK)  
+            LOG.ORDER_LOGGER.info(f"Checking payment status for session: {in_voice_id}")
+
+            for i in range(5):
+                response = requests.get(
+                    url=url + f'/check-status/{in_voice_id}',
+                    headers=headers,
+                    data=json.dumps({"SIMULATE": config.SIMULATE, "MAXRETRIES": config.MAX_RETIRES})
+                )
+
+                code = response.status_code
+                status = response.json().get('MESSAGE')
+                LOG.ORDER_LOGGER.info(f"Payment status check {i+1}/5 for Invoice ID: {in_voice_id} - Status: {status}")
+
+                if status == "COMPLETE":
+                    LOG.ORDER_LOGGER.info(f"Payment completed for session: {orderid}")
+                    return 'paid'
+                elif status == "FAILED":
+                    LOG.ORDER_LOGGER.warning(f"Payment failed for session: {orderid}")
+                    return 'canceled'
+                else:
+                    time.sleep(2)
+
+            LOG.ORDER_LOGGER.warning(f"Payment pending for session: {orderid} after multiple checks")
+            return 'pending'
+
+        except Exception as e:
+            LOG.ORDER_LOGGER.error(f"Exception occurred in payment collection for session: {orderid}: {e}")
+            return None
+
+       

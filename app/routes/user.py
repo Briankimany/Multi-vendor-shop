@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 
 from app.models.user_profile import UserProfile as User 
-
+from app.data_manager.users_manager import UserManager
 from config.config import JSONConfig
+from app.routes.routes_utils import session_set 
+from app.routes.logger import LOG
+from functools import wraps
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -14,32 +17,56 @@ Session = sessionmaker(bind=engine)
 db_session = Session()
 
 user_bp = Blueprint("user", __name__, url_prefix="/user")
+user_obj = UserManager(db_session=db_session , user=None)
 
-@user_bp.before_request
-def load_current_user():
-    """Loads the logged-in user for all user routes"""
-    user_id = session.get("user_id")
-    if user_id:
-        g.current_user = db_session.query(User).filter_by(id=user_id).first()
-    else:
-        g.current_user = None
+
+
+
+
+def force_user_reload(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global user_obj 
+        if user_obj:
+            if "user_id" in session:
+                user_obj.reload_object(session["user_id"] , token=session.get("session_token"))
+            if "session_token"  in session:
+                user_obj.session_tkn = session.get('session_token') 
+        return func(*args, **kwargs)
+    
+    return wrapper
+
+
+@user_bp.route("/")
+def home():
+    return "".join([f"<br> {k}: {v}</br>" for k,v in session.items()])
+
 
 @user_bp.route("/login", methods=["GET", "POST"])
 def login():
     """User login"""
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]  # Hash-checking needed
-        user = db_session.query(User).filter_by(email=email).first()
+        name = request.form["identifier"]
+        password = request.form["password"] 
+        verified = user_obj.verify_password(password=password , user=name)  
+     
+        if verified:
+            user_obj.reload_object(user=name)
+            session["user_id"] = user_obj.user.id
 
-        if user and user.check_password(password):  # Assuming you have a password check function
-            session["user_id"] = user.id
-            flash("Login successful", "success")
+            previous_token = user_obj.get_tkn_from_user_id()
+            if previous_token:
+                session['session_token'] = previous_token.token
+                
+            user_obj.session_tkn = session['session_token']
+            user_obj.self_update_session(data={'user_id':user_obj.user.id})
+
+            LOG.USER_LOGGER.info(f"[LOGED IN] {user_obj}")
             return redirect(url_for("shop.shop_home"))
-        else:
-            flash("Invalid credentials", "danger")
+    
 
-    return render_template("user/login.html")
+    return render_template("login/login.html")
+
 
 @user_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -47,37 +74,80 @@ def register():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-        user = User(email=email)
-        user.set_password(password)  # Assuming you have a password setter method
+        name = request.form['name']
+        phone = request.form['phone']
+        unique_name , names =  user_obj.verify_unique_name(db_session=db_session , suggested_name=name)
+        session['names']=names
+        if unique_name:
+            user_obj.self_register( data={"name":name,"email":email,"password_hash":password , 'phone':phone})
+        else:
+            return render_template("login/register.html" , message = "enter a unique name")
 
-        db_session.add(user)
-        db_session.commit()
-
-        session["user_id"] = user.id  # Auto-login after register
-        flash("Registration successful", "success")
+        session["user_id"] = user_obj.user.id  
+        user_obj.session_tkn = session['session_token']
+        user_obj.self_update_session(data={'user_id':user_obj.user.id})
+    
         return redirect(url_for("shop.shop_home"))
 
-    return render_template("user/register.html")
+    return render_template("login/register.html")
+
 
 @user_bp.route("/logout")
+@session_set
 def logout():
     """Logs out the user"""
-    session.pop("user_id", None)
-    flash("Logged out successfully", "info")
+    session.clear()
     return redirect(url_for("shop.shop_home"))
 
 @user_bp.route("/profile")
+@session_set
 def profile():
     """User profile page"""
-    if not g.current_user:
+    if  'user_id' not in session:
         return redirect(url_for("user.login"))
-    return render_template("user/profile.html", user=g.current_user)
+    else:
+        user_obj.reload_object(user=session.get('user_id'))
+    return render_template("user/profile.html", user=user_obj.user)
+
+
+@user_bp.route("/edit-profile" , methods = ["POST"])
+@session_set
+def edit_profile():
+    """
+    data = {name:<name> , phone: <phone> , email: <email> , password_hash: <password>}
+    """
+    data = request.get_json().get('data')
+    name = data.get('name')
+    email = data.get("email")
+    phone = data.get("phone")
+    new_data = {'name': name ,'phone':phone , 'email':email}
+    LOG.USER_LOGGER.info("***"*10)
+    if "old_password" in data.keys() and "new_password" in data.keys():
+        verified = user_obj.verify_password(user= session['user_id'] , password=data.get("old_password"))
+        LOG.USER_LOGGER.info(f"account verified to modify {verified}")
+        if verified:
+            new_data['password_hash'] = data.get("new_password")
+        else:
+            LOG.USER_LOGGER.info(f"Attempted password change: user={session['user_id']} to: {data.get('new_password')}")
+            return "Done" , 401
+
+    LOG.USER_LOGGER.info(f"data from edit -profile: {new_data}")
+    user_obj.reload_object(user= session['user_id'])
+    user_obj.update_data(data = new_data)
+    return "Done" , 200
+
 
 @user_bp.route("/orders")
+@force_user_reload
+@session_set
 def orders():
-    """User order history"""
-    if not g.current_user:
-        return redirect(url_for("user.login"))
-    
-    orders = g.current_user.orders  # Assuming you have a relationship setup
+    orders = user_obj.get_order_from_session_tkn(session_tkn=session['session_token'] , status='all')
     return render_template("user/orders.html", orders=orders)
+
+
+@user_bp.route("/orders/<int:order_id>/items", methods=["GET"])
+@force_user_reload
+@session_set
+def get_order_items(order_id):
+    items = user_obj.get_my_previous_order_items(order_id)
+    return jsonify({"items": items})

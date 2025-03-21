@@ -4,16 +4,20 @@ from app.models.session_tracking import SessionTracking
 from app.models.cart import Cart as CartModel ,CartItem
 from app.models.cart import Cart
 from app.models.product import Product as ProductModel
+from app.models.order import Order
 import uuid
 from datetime import datetime, timedelta
 import requests
+from app.models.user_profile import UserProfile
+
 
 class SessionManager:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    def create_new_session(self, user_id=None, ip_address=None, browser=None, device=None, consent_given=False):
+    def create_new_session(self,user_id=None, ip_address=None, browser=None, device=None, consent_given=False):
         """Creates a new session and ensures a cart is linked to it."""
+  
         new_token = SessionManager.generate_token()
         
         # Create a new cart
@@ -25,7 +29,7 @@ class SessionManager:
         new_session = SessionTracking(
             token=new_token,
             expires_at=datetime.utcnow() + timedelta(hours=12),
-            cart_id=new_cart.id,  # Link cart to session
+            cart_id=new_cart.id, 
             user_id=user_id,
             ip_address=ip_address,
             browser=browser,
@@ -36,6 +40,22 @@ class SessionManager:
         self.db_session.commit()
         
         return new_session.token  # Return session token for reference
+
+    def verify_session_token(self , session_token):
+        tkn = self.db_session.query(SessionTracking).filter(SessionTracking.token == session_token).first()
+        
+        if tkn:
+            now = datetime.now()
+            expiry_time = tkn.expires_at
+            is_expired = now >=expiry_time
+            if is_expired:
+                return False
+            else:
+                return True
+        else:
+            return False
+
+            
 
     def create_cart(self , user_id, session_tkn):
         """Creates a new empty cart and returns its ID."""
@@ -163,6 +183,20 @@ class SessionManager:
             session.region = region
             session.city = city
             self.db_session.commit()
+
+    def get_phone_from_session_token(self , tkn):
+        session = self.db_session.query(SessionTracking).filter(SessionTracking.token==tkn).first()
+        print("Userid from getting  phpne" , session.user_id)
+        if session.user_id:
+            phone = self.db_session.query(UserProfile).filter(UserProfile.id == session.user_id).first()
+            return phone.phone
+        else:
+            return None
+        
+    def get_order_from_session_tkn(self , session_tkn:str , status='pending'):
+        orders = self.db_session.query(Order).filter(Order.session == session_tkn , Order.status == status ).all()
+        return orders
+        
     @staticmethod
     def generate_token():
         """Generates a unique session token."""

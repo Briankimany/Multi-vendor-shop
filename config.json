@@ -3,5 +3,8 @@
     "log_file": "/var/logs/vendor_project.log",
     "debug": true,
     "uploads_dir": "./uploads",
-    "payment_url":"https://playpit.pythonanywhere.com"
+    "payment_url":"https://playpit.pythonanywhere.com",
+    "DELAY_BEFORE_STATUS_CHECK":2,
+    "MAX_RETIRES":2,
+    "SIMULATE":true
 }

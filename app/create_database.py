@@ -28,7 +28,7 @@ def reset_table(table_name: str):
             session.rollback()
             print(f"Error resetting table {table_name}: {e}")
 
-# reset_table("order_items")
+reset_table("user_table")
 # reset_table("carts")
 
 def init_db():

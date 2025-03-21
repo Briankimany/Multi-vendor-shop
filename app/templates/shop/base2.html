@@ -4,267 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Playpit Shop{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base2.css') }}">
+    {% block styles %}{% endblock %}
+    
 </head>
-<style>
-    /* General Styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #f8f9fa;
-}
-
-/* Header */
-header {
-    background: #fff;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
-    position: sticky;
-    top: 0;
-    width: 100%;
-    z-index: 1000;
-}
-
-.logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-}
-
-/* Navigation */
-.nav-container {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
-}
-
-.nav-links {
-    list-style: none;
-    padding: 0;
-    display: flex;
-}
-
-.nav-links li {
-    margin: 0 10px;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    padding: 8px 12px;
-}
-
-.nav-links a:hover {
-    background: #1a1818;
-    border-radius: 5px;
-}
-
-/* Dropdown Menu */
-.dropdown {
-    position: relative;
-}
-
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-    border: 1px solid #ddd;
-    list-style: none;
-    padding: 10px;
-    width: 150px;
-}
-
-.dropdown:hover .dropdown-menu {
-    display: block;
-}
-
-.dropdown-menu li {
-    padding: 5px 10px;
-}
-
-.dropdown-menu a {
-    color: #333;
-    text-decoration: none;
-}
-
-.dropdown-menu a:hover {
-    background: #eee;
-}
-
-/* Search Bar */
-.search-form {
-    display: flex;
-    align-items: center;
-}
-
-.search-form input {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 200px;
-}
-
-.search-form button {
-    padding: 8px;
-    border: none;
-    background: #007bff;
-    color: white;
-    cursor: pointer;
-    border-radius: 5px;
-    margin-left: 5px;
-}
-
-.search-form button:hover {
-    background: #0056b3;
-}
-
-/* Footer */
-footer {
-    background: #333;
-    color: white;
-    padding: 20px;
-    text-align: center;
-}
-
-.footer-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.footer-links {
-    margin-bottom: 10px;
-}
-
-.footer-links a {
-    color: white;
-    margin: 0 10px;
-    text-decoration: none;
-}
-
-.footer-links a:hover {
-    text-decoration: underline;
-}
-
-.social-icons img {
-    width: 20px;
-    margin: 0 5px;
-}
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    margin: 0;
-}
-
-.content {
-    flex: 1; /* Pushes the footer down */
-}
-
-.footer {
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 10px;
-}
-html, body {
-    overflow-x: hidden;
-}
-/* Ensure the page takes the full height */
-html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Make the main content take up available space */
-.main-content {
-    flex-grow: 1;
-}
-
-/* Footer styles */
-.footer {
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 15px;
-    position: relative;
-    width: 100%;
-}
-.footer {
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 5px 10px; /* Minimized padding */
-    font-size: 12px;  /* Even smaller text */
-    line-height: 1.2; /* Reduce line spacing */
-    width: 100%;
-}
-.footer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 80%; /* Adjust width as needed */
-    margin: 0 auto; /* Center it horizontally */
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 8px 15px;
-    font-size: 14px;
-    border-radius: 8px; /* Optional: Rounded corners */
-}
-.nav-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: #45474a;
-}
-
-.nav-links {
-    display: flex;
-    flex-wrap: wrap;
-    list-style: none;
-    padding: 0;
-}
-
-.nav-links li {
-    margin: 5px;
-}
-
-.nav-links a {
-    color: rgb(198, 121, 121);
-    text-decoration: none;
-    padding: 8px 12px;
-    display: block;
-}
-
-
-
-</style>
 <body>
-    <!-- Header -->
+    {% block scripts %}{% endblock %}
     <div class="main-content">
     <header>
         <div class="nav-container">
            
-            
-            <!-- Search Bar -->
-            <form action="{{ url_for('shop.search') }}" method="GET" class="search-form">
-                <input type="text" name="q" placeholder="Search products..." required>
-                <button type="submit">🔍</button>
+            <form id="search-form">
+                <input type="text" id="search-input" placeholder="Search products..." disabled>
+                <button type="submit" id="search-btn">Search</button>
             </form>
-            
+            <p id="search-message" style="display: none; color: red;">🔍 Search is coming soon!</p>
+        
             <nav>
                 <ul class="nav-links">
                     <li><a href="{{ url_for('shop.shop_home') }}">Shops</a></li>
@@ -290,7 +45,6 @@ html, body {
         </div>
     </header>
 
-    <!-- Main Content -->
     <main>
         {% block content %}{% endblock %}
     </main>
@@ -299,10 +53,10 @@ html, body {
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-links">
-                <a href="{{ url_for('shop.about') }}">About</a>
-                <a href="{{ url_for('shop.contact') }}">Contact</a>
-                <a href="{{ url_for('shop.terms') }}">Terms</a>
-                <a href="{{ url_for('shop.privacy') }}">Privacy</a>
+                <a href="{{ url_for('info.about') }}">About</a>
+                <a href="{{ url_for('info.contact') }}">Contact</a>
+                <a href="{{ url_for('info.terms') }}">Terms</a>
+                <a href="{{ url_for('info.privacy') }}">Privacy</a>
             </div>
             
             <div class="social-icons">
@@ -314,5 +68,17 @@ html, body {
             <p>&copy; 2025 Playpit. All rights reserved.</p>
         </div>
     </footer>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const searchForm = document.getElementById("search-form");
+    const searchMessage = document.getElementById("search-message");
+
+    searchForm.addEventListener("submit", function (event) {
+        event.preventDefault(); 
+        searchMessage.style.display = "block";
+    });
+});
+
+</script>
 </body>
 </html>

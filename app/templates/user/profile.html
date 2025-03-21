@@ -1,0 +1,288 @@
+{% extends 'shop/base2.html' %}
+
+{% block content %}
+    <div class="profile-container">
+        <h2>User Profile</h2>
+
+        <!-- Profile Information -->
+        <div class="profile-details">
+            <div class="profile-item">
+                <strong>Name:</strong> 
+                <span id="name-value">{{ user.name if user.name else 'Not Provided' }}</span>
+                <button onclick="editField('name')">Edit</button>
+            </div>
+
+            <div class="profile-item">
+                <strong>Email:</strong> 
+                <span id="email-value">{{ user.email if user.email else 'Not Provided' }}</span>
+                <button onclick="editField('email')">Edit</button>
+            </div>
+
+            <div class="profile-item">
+                <strong>Phone:</strong> 
+                <span id="phone-value">{{ user.phone if user.phone else 'Not Provided' }}</span>
+                <button onclick="editField('phone')">Edit</button>
+            </div>
+            <div class="profile-item">
+                <strong>Password:</strong>
+                <span id="password-value">********</span>
+                <button onclick="togglePasswordEdit()">Edit</button>
+            </div>
+            
+            <!-- Hidden Password Edit Form -->
+            <div id="password-edit" style="display: none;">
+                <label for="old-password">Old Password:</label>
+                <div class="password-container">
+                    <input type="password" id="old-password" placeholder="Enter old password">
+                    <span class="toggle-visibility" onclick="togglePassword('old-password')">👁️</span>
+                </div>
+            
+                <label for="new-password">New Password:</label>
+                <div class="password-container">
+                    <input type="password" id="new-password" placeholder="Enter new password">
+                    <span class="toggle-visibility" onclick="togglePassword('new-password')">👁️</span>
+                </div>
+            </div>
+            
+            
+            <div class="profile-item">
+                <strong>Created At:</strong> 
+                <span>{{ user.created_at }}</span>
+            </div>
+        </div>
+
+        <!-- Save Changes Button -->
+        <button class="save-btn" onclick="saveChanges()">Save Changes</button>
+    </div>
+    <style>
+        .profile-container {
+            margin: 40px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            background-color: #f4f4f9;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+    
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            font-weight: 500;
+        }
+    
+        .profile-details {
+            margin-bottom: 20px;
+        }
+    
+        .profile-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    
+        .profile-item strong {
+            color: #444;
+            flex-basis: 30%;
+            margin-bottom: 5px;
+            min-width: 120px;
+        }
+    
+        .profile-item span {
+            flex-grow: 1;
+            color: #555;
+            margin-bottom: 5px;
+        }
+    
+        .profile-item button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 5px;
+            min-width: 80px;
+        }
+    
+        .profile-item button:hover {
+            background-color: #0056b3;
+        }
+    
+        #password-edit {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;  /* Initially hidden */
+        }
+    
+        #password-edit label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: 500;
+        }
+    
+        #password-edit input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+    
+        #password-edit input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        }
+    
+        .save-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+    
+        .save-btn:hover {
+            background-color: #218838;
+        }
+    
+        @media screen and (max-width: 600px) {
+            .profile-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+    
+            .profile-item strong {
+                margin-bottom: 5px;
+            }
+    
+            .profile-item button {
+                align-self: flex-end;
+            }
+        }
+    </style>
+    
+    <script>
+        function editField(field) {
+            const valueSpan = document.getElementById(`${field}-value`);
+            const currentValue = valueSpan.textContent;
+
+            // Create an input field to edit the value
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.id = `${field}-input`;
+
+            // Replace the text span with the input field
+            valueSpan.replaceWith(input);
+        }
+        function togglePasswordEdit() {
+            const passwordEditDiv = document.getElementById('password-edit');
+            passwordEditDiv.style.display = 
+                passwordEditDiv.style.display === 'none' ? 'block' : 'none';
+        }
+        function saveChanges() {
+            const fields = ['name', 'email', 'phone'];
+            let data = {};
+
+            // Collect updated field values
+            fields.forEach(field => {
+                    const input = document.getElementById(`${field}-input`);
+                    const value = input ? input.value : document.getElementById(`${field}-value`).textContent;
+                    data[field] = value;
+                });
+
+                // Check if the password fields are filled
+                const oldPassword = document.getElementById('old-password').value;
+                const newPassword = document.getElementById('new-password').value;
+
+                if (oldPassword && newPassword) {
+                    data['old_password'] = oldPassword;
+                    data['new_password'] = newPassword;
+                }
+
+                // Send POST request to update profile
+                fetch("{{ url_for('user.edit_profile') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ data: data })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Profile updated successfully!');
+                        location.reload(); // Refresh the page to show updated details
+                    } else {
+                        alert('Failed to update profile. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error("Error updating profile:", error);
+                    alert('An error occurred while updating your profile.');
+                });
+        }
+        function togglePassword(fieldId) {
+    const passwordInput = document.getElementById(fieldId);
+    const toggleIcon = passwordInput.nextElementSibling;
+
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        toggleIcon.textContent = "🙈";  // Change icon to "hide"
+    } else {
+        passwordInput.type = "password";
+        toggleIcon.textContent = "👁️";  // Change icon to "show"
+    }
+}
+    
+
+    </script>
+    <style>
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+    
+        .toggle-visibility {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #666;
+        }
+    
+        .toggle-visibility:hover {
+            color: #000;
+        }
+    </style>
+    
+{% endblock %}

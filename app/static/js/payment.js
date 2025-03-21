@@ -1,11 +1,11 @@
-
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     const confirmBtn = document.getElementById("confirm-btn");
     const phoneInput = document.getElementById("phone");
     const amountInput = document.getElementById("amount");
-    const loadingSpinner = document.getElementById("loading");
+    const loadingContainer = document.getElementById("loading-container");
+    const statusMessage = document.getElementById("status-message");
 
-    confirmBtn.addEventListener("click", function() {
+    confirmBtn.addEventListener("click", function () {
         const phoneNumber = phoneInput.value.trim();
         const amount = amountInput.value.trim();
 
@@ -15,28 +15,30 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         // Show loading spinner
-        loadingSpinner.style.display = "block";
+        loadingContainer.style.display = "flex";
+        statusMessage.innerText = "";
 
-        // Simulate processing delay (5 seconds)
-        setTimeout(() => {
-            loadingSpinner.style.display = "none";
-         
-            fetch('api-pay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phoneNumber, amount: amount })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // alert(data.message);
+        fetch('api-pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phoneNumber, amount: amount })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingContainer.style.display = "none"; // Hide spinner
+
             if (data.message === "success") {
-                window.location.href = "/shop/";  // Change to your target page
-            }})
-            .catch(error => {
-                alert("Error processing payment."+error);
-            });
-
-        }, 5000); 
+                statusMessage.innerHTML = "<span style='color: green;'>✅ Payment Successful! Redirecting...</span>";
+                setTimeout(() => {
+                    window.location.href = "/shop/";  // Change to your target page
+                }, 2000);
+            } else {
+                statusMessage.innerHTML = `<span style='color: orange;'>⚠️ ${data.message}</span>`;
+            }
+        })
+        .catch(error => {
+            loadingContainer.style.display = "none"; // Hide spinner
+            statusMessage.innerHTML = "<span style='color: red;'>❌ Payment Failed. Please try again.</span>";
+        });
     });
 });
-
