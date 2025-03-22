@@ -4,12 +4,12 @@ from app.routes.vendor import vendor_bp
 from app.routes.shop import shop_bp
 from app.routes.user import user_bp
 from app.routes.info import info_bp
+from pathlib import Path
 
 
 
 
-
-app = Flask(__name__ ,static_folder= "/home/ajay/Documents/VENDOR-PROJECT/app/static")
+app = Flask(__name__ ,static_folder= str(Path().cwd()/"app/static"))
 app.secret_key = "djk"
 
 app.register_blueprint(vendor_bp)
@@ -27,5 +27,3 @@ def log_out():
 def g():
     return "".join([f"<br> {k}: {v}</br>" for k,v in session.items()])
 
-if __name__ == "__main__":
-    app.run(debug=True)

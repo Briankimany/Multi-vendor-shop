@@ -28,10 +28,9 @@ def get_or_create_session():
         if "user_id" in session:
             user_obj.session_tkn = session.get("session_token")
             user_obj.reload_object(session["user_id"])
-            LOG.USER_LOGGER.info(str(user_obj))
+       
             user_obj.self_update_session(data={"user_id": user_obj.user.id})
-            LOG.USER_LOGGER.info(f" from routes utils user_id found updating details. User ID: {session.get('user_id')} for tkn {session["session_token"] }")
-  
+      
         LOG.MAIN_LOGGER.info(f" from routes utils Session initialized. User ID: {session.get('user_id')}")
         return session["session_token"]
 
