@@ -4,7 +4,7 @@
     "debug": true,
     "uploads_dir": "./uploads",
     "payment_url":"https://playpit.pythonanywhere.com",
-    "DELAY_BEFORE_STATUS_CHECK":2,
-    "MAX_RETIRES":2,
+    "DELAY_BEFORE_STATUS_CHECK":1,
+    "MAX_RETIRES":4,
     "SIMULATE":true
 }

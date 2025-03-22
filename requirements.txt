@@ -1,32 +1,19 @@
-# requirements.txt
-You are an AI asistant that desings css templates that are realistic in real wolrd. You take time to reason what a realistic css would look for the current html template then create a css template
-
-### **Base Prompt for AI Implementation of Product Display Template**  
-
-**Objective:**  
-Design a product display template for an e-commerce site while ensuring **real-world usability**, **structural consistency**, and **compatibility with external JavaScript**.  
-
-**Key Considerations Before Implementation:**  
-1. **Reasoning & Real-World Analysis**  
-   - Analyze how professional e-commerce sites structure product displays.  
-   - Ensure a clean, intuitive layout optimized for user experience.  
-   - Implement best practices for styling, spacing, and content arrangement.  
-
-2. **HTML Structural Consistency**  
-   - You are **allowed to rearrange HTML tags** for better structure but **must not change element names in a way that affects external JavaScript functionality**.  
-   - Emphasize maintaining **compatibility with pre-existing JS code** to avoid breaking interactive features.  
-
-3. **Display Requirements**  
-   - **Stock Indication:** Show whether a product is **in stock** or **out of stock** based on the `stock` attribute.  
-   - **Category Display:** Display the product category for easier navigation.  
-   - **Price Formatting:** Ensure prices are neatly formatted (e.g., `$12.99` instead of `$12.9900`).  
-
-4. **Styling & Layout**  
-   - Use a **grid-based layout** for product listings to maintain a structured appearance.  
-   - Ensure **proper spacing and interactivity**, including button placements and input fields.  
-   - Adhere to **real-world e-commerce design principles** for an aesthetically pleasing UI.  
-
-**Final Constraint:**  
-- AI **must first reason out** a proper structure based on real-world patterns before coding.  
-- The HTML and CSS **must reflect this reasoning while still adhering to the given instructions**.  
-
+blinker==1.9.0
+certifi==2025.1.31
+charset-normalizer==3.4.1
+click==8.1.8
+Flask==3.1.0
+free_proxy==1.1.3
+greenlet==3.1.1
+idna==3.10
+itsdangerous==2.2.0
+Jinja2==3.1.5
+lxml==5.3.1
+Markdown==3.7
+MarkupSafe==3.0.2
+python-dotenv==1.0.1
+requests==2.32.3
+SQLAlchemy==2.0.38
+typing_extensions==4.12.2
+urllib3==2.3.0
+Werkzeug==3.1.3

@@ -16,3 +16,8 @@ class OrderItem(Base):
     quantity = Column(Integer, nullable=False)
     price_at_purchase = Column(DECIMAL(10, 2), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+    def __reprs__(self):
+        return self.__str__()
+    def __str__(self):
+        return f"<OrderItem id={self.id} , orderid={self.order_id} , quantity={self.quantity} , product={self.product_id}"

@@ -1,4 +1,5 @@
-from .database_index import Database , PayoutModel , OrderModel , ProductModel
+from .database_index import Database , PayoutModel , OrderModel , ProductModel 
+from app.models.order_item import OrderItem
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 import requests
@@ -165,12 +166,34 @@ class VendorObj:
 
         """Fetch summary statistics for the vendor dashboard."""
         vendor_id = self.vendor_id
+        def get_orders(status):
+            completed_order = self.db.session.query(OrderModel).filter(OrderModel.status == status).all()
+            cart_ids = [i.vendor_id for i in completed_order]
+            
+            order_items = self.db.session.query(OrderItem).filter(OrderItem.order_id.in_(cart_ids)).all()
+            [print(i) for i in order_items]
+            vendors_products = self.db.session.query(ProductModel).filter(ProductModel.vendor_id == self.vendor_id).all()
+            vendors_products= [ i.id for i in vendors_products]
+            vendors_oder_items = [i for i in order_items if i.product_id in vendors_products]
+            return vendors_oder_items
+        complteed_vendors_oder_items = get_orders('paid')
+        total_rev = sum([i.price_at_purchase*i.quantity] for i in complteed_vendors_oder_items)
+        pending_venor_order_items = get_orders('pendig')
+
+
+        # return {
+        #     "total_products": self.db.session.query(func.count(ProductModel.id)).filter_by(vendor_id=vendor_id).scalar(),
+        #     "total_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id).scalar(),
+        #     "pending_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Pending").scalar(),
+        #     "completed_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Completed").scalar(),
+        #     "total_revenue": self.db.session.query(func.coalesce(func.sum(OrderModel.total_amount), 0)).filter_by(vendor_id=vendor_id).scalar(),
+        # }
         return {
             "total_products": self.db.session.query(func.count(ProductModel.id)).filter_by(vendor_id=vendor_id).scalar(),
-            "total_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id).scalar(),
-            "pending_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Pending").scalar(),
-            "completed_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Completed").scalar(),
-            "total_revenue": self.db.session.query(func.coalesce(func.sum(OrderModel.total_amount), 0)).filter_by(vendor_id=vendor_id).scalar(),
+            "total_orders": len(complteed_vendors_oder_items),
+            "pending_orders": len(pending_venor_order_items),
+            "completed_orders": len(complteed_vendors_oder_items),
+            "total_revenue":total_rev
         }
 
     def get_recent_orders(self, limit=5):

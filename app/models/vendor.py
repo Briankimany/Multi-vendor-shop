@@ -21,7 +21,6 @@ class Vendor(Base):
 
 
 
-
 class VendorPayout(Base):
     __tablename__ = "vendor_payouts"
 

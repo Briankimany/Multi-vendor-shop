@@ -210,24 +210,7 @@ def api_process_payment():
 
 
 
-### ectra endpoints
-
 @shop_bp.route("/search")
 def search():
     return "Search Page (Placeholder)"
 
-@shop_bp.route("/about")
-def about():
-    return "About Page (Placeholder)"
-
-@shop_bp.route("/contact")
-def contact():
-    return "Contact Page (Placeholder)"
-
-@shop_bp.route("/terms")
-def terms():
-    return "Terms & Conditions (Placeholder)"
-
-@shop_bp.route("/privacy")
-def privacy():
-    return "Privacy Policy (Placeholder)"

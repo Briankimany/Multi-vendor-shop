@@ -17,10 +17,17 @@ vendor_bp = Blueprint("vendor", __name__, url_prefix="/vendor")
 def login():
     session['vendor_id'] = 1
     return "logged in "
+
+@vendor_bp.route("/login/<vendoid>")
+def login2(vendoid):
+    session['vendor_id'] = vendoid
+    return redirect(url_for("vendor.dashboard"))
+
 @vendor_bp.route("/logout")
 def logout():
     session.clear()
     return "Logged out"
+
 @vendor_bp.route("/register")
 def register():
     session['vendor_id'] = 1
@@ -36,11 +43,14 @@ def dashboard():
     if "vendor_id" not in session:
         return redirect(url_for("vendor.login"))
     vendor = VendorObj(session['vendor_id'], db_session=db_session)
+
+    print(vendor.get_dashboard_data())
     return render_template(
         "vendor/dashboard2.html",
         summary=vendor.get_dashboard_data(),
         recent_orders=vendor.get_recent_orders(),
         low_stock_products=vendor.get_low_stock_products(),
+        name = vendor.vendor_table.name if vendor.vendor_table else "INVALID VENDOR"
     )
 @vendor_bp.route("/add_product", methods=["GET", "POST"])
 def add_product():
