@@ -12,13 +12,13 @@ DEFAULT_SETTINGS = {
     "database_url": "vendor_project.db",
     "log_file": "/var/logs/vendor_project.log",
     "debug": True,
-    "uploads_dir": "./uploads",
+    "uploads_dir_path": "uploads",
     "payment_url": "http://playpit.pythonanywhere.com",
     "DELAY_BEFORE_STATUS_CHECK":2,
     "MAX_RETIRES":3,
     "SIMULATE": True
 }
-
+PATHS_LIST = ['uploads_dir_path']
 class Config(ABC):
     def __init__(self, json_path: str, default_data = None):
         self.json_path = Path(json_path)
@@ -40,7 +40,7 @@ class Config(ABC):
         """Set class attributes from a dictionary, converting paths where necessary."""
         for key, value in data.items():
             if  isinstance(value, str):
-                if Path(value).suffix in ['.db', '.log']:
+                if Path(value).suffix in ['.db', '.log'] or key in PATHS_LIST:
                     value = Path(value)
             setattr(self, key, value)
             
@@ -56,6 +56,8 @@ class JSONConfig(Config):
         with open(self.json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         self._load_attributes(data)
+        print("self.upload_lath" ,self.uploads_dir_path )
+        self.uploads_dir_path.mkdir(parents=True , exist_ok= True)
     def __save__(self, data: dict):
         """Save dictionary data to JSON file."""
         with open(self.json_path, "w", encoding="utf-8") as f:

@@ -1,65 +1,444 @@
 {% extends 'shop/base2.html' %}
 
+{% block title %}Order History{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/order2.js') }}"></script>
+{% endblock %}
+
 {% block content %}
-    <h2>Order History</h2>
+<div class="order-history-container">
+    <div class="order-history-header">
+        <h2><i class="fas fa-history"></i> Order History</h2>
+        <div class="order-filter">
+            <label for="status-filter">Filter by status:</label>
+            <select id="status-filter" class="status-filter">
+                <option value="all">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
 
     {% if orders %}
-        <div class="orders-container">
+    <div class="orders-card">
+        <div class="table-responsive">
             <table class="orders-table">
                 <thead>
                     <tr>
-                        <th>Phone Number</th>
-                        <th>Total Amount</th>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Phone</th>
+                        <th>Amount</th>
                         <th>Status</th>
-                        <th>Payment Type</th>
+                        <th>Payment</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for order in orders %}
-                        <tr>
-                            <td>{{ order.phone_number }}</td>
-                            <td>${{ "%.2f" | format(order.total_amount) }}</td>
-                            <td class="status {{ order.status }}">{{ order.status.capitalize() }}</td>
-                            <td>{{ "Pre-Delivery" if order.payment_type == "pre-delivery" else "Payment on Delivery" }}</td>
-                            <td>
-                                <button class="inspect-btn" data-order-id="{{ order.id }}">Inspect</button>
-                            </td>
-                        </tr>
+                    <tr class="order-row" data-status="{{ order.status }}">
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at.strftime('%b %d, %Y') }}</td>
+                        <td>{{ order.phone_number }}</td>
+                        <td>${{ "%.2f" | format(order.total_amount) }}</td>
+                        <td>
+                            <span class="status-badge {{ order.status }}">
+                                {{ order.status.capitalize() }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="payment-badge {{ order.payment_type }}">
+                                {% if order.payment_type == "pre-delivery" %}
+                                <i class="fas fa-credit-card"></i> Pre-Paid
+                                {% else %}
+                                <i class="fas fa-truck"></i> On Delivery
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="inspect-btn" data-order-id="{{ order.id }}">
+                                <i class="fas fa-search"></i> Details
+                            </button>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <!-- Order Items Modal -->
-        <div id="order-items-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-btn">&times;</span>
-                <h3>Order Details</h3>
-                <table class="order-items-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Price at Purchase</th>
-                        </tr>
-                    </thead>
-                    <tbody id="order-items-body">
-                        <!-- Order items will be dynamically inserted here -->
-                    </tbody>
-                </table>
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Order #<span id="modal-order-id"></span></h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="order-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Date:</span>
+                        <span id="order-date" class="summary-value"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Status:</span>
+                        <span id="order-status" class="summary-value"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Payment:</span>
+                        <span id="order-payment" class="summary-value"></span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total:</span>
+                        <span id="order-total" class="summary-value"></span>
+                    </div>
+                </div>
+
+                <div class="order-items-container">
+                    <h4>Items</h4>
+                    <table class="order-items-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-items-body">
+                            <!-- Items will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="print-order" class="btn-secondary">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+                <button class="close-btn btn-primary">
+                    <i class="fas fa-times"></i> Close
+                </button>
             </div>
         </div>
-
+    </div>
     {% else %}
-        <p>No orders found.</p>
+    <div class="empty-orders">
+        <img src="{{ url_for('static', filename='images/empty-orders.svg') }}" alt="No orders" class="empty-img">
+        <h3>No Orders Found</h3>
+        <p>You haven't placed any orders yet</p>
+        <a href="{{ url_for('shop.shop_home') }}" class="btn-primary">
+            <i class="fas fa-shopping-cart"></i> Start Shopping
+        </a>
+    </div>
     {% endif %}
-{% endblock %}
+</div>
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/user/orders.css') }}">
-{% endblock %}
+<style>
+/* ========== Order History Container ========== */
+.order-history-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+.order-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.order-history-header h2 {
+    font-size: 1.75rem;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.order-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-filter {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background-color: white;
+}
+
+/* ========== Orders Table ========== */
+.orders-card {
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.orders-table th {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+}
+
+.orders-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.order-row:hover {
+    background-color: var(--bg-light);
+}
+
+/* ========== Status Badges ========== */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background-color: #fffbeb;
+    color: #b45309;
+}
+
+.status-badge.completed {
+    background-color: #ecfdf5;
+    color: #065f46;
+}
+
+.status-badge.cancelled {
+    background-color: #fef2f2;
+    color: #b91c1c;
+}
+
+/* ========== Payment Badges ========== */
+.payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.payment-badge.pre-delivery {
+    background-color: #eff6ff;
+    color: #1e40af;
+}
+
+.payment-badge.post-delivery {
+    background-color: #f5f3ff;
+    color: #5b21b6;
+}
+
+/* ========== Action Buttons ========== */
+.inspect-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.inspect-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+/* ========== Empty State ========== */
+.empty-orders {
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.empty-img {
+    width: 200px;
+    height: auto;
+    margin-bottom: 1.5rem;
+    opacity: 0.7;
+}
+
+.empty-orders h3 {
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.empty-orders p {
+    color: var(--text-medium);
+    margin-bottom: 1.5rem;
+}
+
+/* ========== Modal Styles ========== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 2rem auto;
+    max-width: 800px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    color: var(--text-dark);
+    font-size: 1.5rem;
+}
+
+.close-modal {
+    font-size: 1.75rem;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--text-dark);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.order-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--text-medium);
+}
+
+.summary-value {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.order-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.order-items-table th {
+    background-color: var(--bg-light);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-medium);
+}
+
+.order-items-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* ========== Animations ========== */
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== Responsive Styles ========== */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .order-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .orders-table th, 
+    .orders-table td {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-history-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .order-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+}
+</style>
+
+
+
 {% endblock %}

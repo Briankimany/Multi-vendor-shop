@@ -1,11 +1,13 @@
-from .database_index import Database , PayoutModel , OrderModel , ProductModel 
-from app.models.order_item import OrderItem
+from .database_index import Database , PayoutModel , OrderModel , ProductModel  
+from app.models.order_item import OrderItem , VendorOrder
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 import requests
 from config.config import JSONConfig
 import json
 import time
+from app.models.vendor import Vendor
+from app.routes.logger import LOG
 
 class VendorObj:
     """
@@ -22,7 +24,7 @@ class VendorObj:
             db_session (Session): The database session instance.
         """
         self.vendor_id = vendor_id
-
+        self.db_session = db_session
         self.db = Database(session=db_session)
         self.vendor_table = self.db.get_vendor(vendor_id=vendor_id)
         self.config = JSONConfig(json_path="config.json")
@@ -30,7 +32,34 @@ class VendorObj:
     @staticmethod
     def get_all_vendors(db_session:Session):
         return Database(db_session).get_all_vendors()
-    def update_details(self,**update_data):
+    @staticmethod
+    def get_vendor_by(db_session: Session ,key , value):
+        vendor = db_session.query(Vendor).filter(getattr(Vendor , key) == value).first()
+        return vendor
+    
+    @staticmethod
+    def register_vendor(db_session:Session , data={}):
+        LOG.VENDOR_LOGGER.info(f"Creating/updating a new vendor data: {data}")
+        try:
+            vendor =VendorObj.get_vendor_by(db_session ,'name' , data.get('name'))
+            if vendor:
+                vendorobj = VendorObj(vendor_id=vendor.id , db_session=db_session)
+                print(data)
+                vendorobj.update_details(data)
+                return vendorobj
+            else:
+                new_vendor = Vendor(**data)
+                db_session.add(new_vendor)
+                db_session.commit()
+                LOG.VENDOR_LOGGER.info("Done...")
+            return VendorObj(new_vendor.id ,db_session)
+        except Exception as e:
+            LOG.VENDOR_LOGGER.error(f"error during creation of new vendor E: {e}")
+            return None
+    def reload(self):
+        self.vendor_table = self.db.get_vendor(vendor_id=self.vendor_id)
+
+    def update_details(self,update_data):
         """
         Updates vendor details.
 
@@ -44,7 +73,7 @@ class VendorObj:
         Returns:
             str: Confirmation message indicating update success.
         """
-        self.db.update_vendor(self.vendor_id, **update_data)
+        self.db.update_vendor(self.vendor_id, update_data)
         return "Vendor details updated."
 
     def verify(self):
@@ -163,38 +192,10 @@ class VendorObj:
 
 
     def get_dashboard_data(self):
+        return VendorObj.summarize_vendors(db_session=self.db_session , 
+                                           vendor_id=self.vendor_id)
 
-        """Fetch summary statistics for the vendor dashboard."""
-        vendor_id = self.vendor_id
-        def get_orders(status):
-            completed_order = self.db.session.query(OrderModel).filter(OrderModel.status == status).all()
-            cart_ids = [i.vendor_id for i in completed_order]
-            
-            order_items = self.db.session.query(OrderItem).filter(OrderItem.order_id.in_(cart_ids)).all()
-            [print(i) for i in order_items]
-            vendors_products = self.db.session.query(ProductModel).filter(ProductModel.vendor_id == self.vendor_id).all()
-            vendors_products= [ i.id for i in vendors_products]
-            vendors_oder_items = [i for i in order_items if i.product_id in vendors_products]
-            return vendors_oder_items
-        complteed_vendors_oder_items = get_orders('paid')
-        total_rev = sum([i.price_at_purchase*i.quantity] for i in complteed_vendors_oder_items)
-        pending_venor_order_items = get_orders('pendig')
-
-
-        # return {
-        #     "total_products": self.db.session.query(func.count(ProductModel.id)).filter_by(vendor_id=vendor_id).scalar(),
-        #     "total_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id).scalar(),
-        #     "pending_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Pending").scalar(),
-        #     "completed_orders": self.db.session.query(func.count(OrderModel.id)).filter_by(vendor_id=vendor_id, status="Completed").scalar(),
-        #     "total_revenue": self.db.session.query(func.coalesce(func.sum(OrderModel.total_amount), 0)).filter_by(vendor_id=vendor_id).scalar(),
-        # }
-        return {
-            "total_products": self.db.session.query(func.count(ProductModel.id)).filter_by(vendor_id=vendor_id).scalar(),
-            "total_orders": len(complteed_vendors_oder_items),
-            "pending_orders": len(pending_venor_order_items),
-            "completed_orders": len(complteed_vendors_oder_items),
-            "total_revenue":total_rev
-        }
+   
 
     def get_recent_orders(self, limit=5):
         """Fetch recent orders."""
@@ -253,5 +254,89 @@ class VendorObj:
         except Exception as e:
             print(e)
             return None
+    
+     ## get the details ie order , associcated with the vendor and the amount
+
+
+    @staticmethod
+    def summarize_vendors(db_session: Session ,vendor_id):
+        """
+        Summarizes the order details and revenue associated with a specific vendor.
+
+        This function retrieves and organizes data related to the vendor's products, 
+        total revenue, and orders. It calculates the total number of products, 
+        total revenue from completed orders, and categorizes orders based on their status.
+
+        Args:
+            vendor_id (int): The ID of the vendor whose order details are being summarized.
+
+        Returns:
+            dict: A dictionary containing the following details:
+                - total_products (int): The total number of products listed by the vendor.
+                - total_revenue (float): The total revenue generated from completed orders.
+                - orders (dict): A dictionary of order details, where each key is an order ID
+                and its value contains:
+                    - revenue (float): The revenue from that specific order.
+                    - status (str): The current status of the order.
+                    - orderitems (list): A list of dictionaries, each containing:
+                        - orderitem_id (int): The ID of the order item.
+                        - quantity (int): The quantity of the product purchased.
+                        - price_at_purchase (float): The price per unit at the time of purchase.
+
+        Example:
+            >>> summarize_vendors(2)
+            {
+                2: {
+                    'total_products': 5,
+                    'total_revenue': 1500.00,
+                    'orders': {
+                        101: {
+                            'revenue': 500.00,
+                            'status': 'pending',
+                            'orderitems': [
+                                {'orderitem_id': 30, 'quantity': 2, 'price_at_purchase': 250.00}
+                            ]
+                        },
+                        102: {
+                            'revenue': 1000.00,
+                            'status': 'completed',
+                            'orderitems': [
+                                {'orderitem_id': 31, 'quantity': 5, 'price_at_purchase': 200.00}
+                            ]
+                        }
+                    }
+                }
+            }
+        """
+
+        vendor_data ={}
+        total_products = db_session.query(func.count(ProductModel.id)).filter(ProductModel.vendor_id == vendor_id).scalar()
+        vendor_data['total_products'] = total_products
+        vendor_data['total_revenue'] = 0
+        data = {}
+
+        vendor_table_data = (
+        db_session.query(OrderModel, OrderItem,VendorOrder ,ProductModel)
+            .join(OrderItem, VendorOrder.orderitem == OrderItem.id) 
+            .join(OrderModel, VendorOrder.orderid == OrderModel.id) 
+            .join(ProductModel , ProductModel.id == OrderItem.product_id)
+            .filter(VendorOrder.vendorid == vendor_id)
+            .order_by(VendorOrder.orderid)
+            .all()
+        )
         
+        for order , orderitem ,_, product in vendor_table_data:
+            if order.id not in data:
+                data[order.id] = {"revenue":0 , "orderitems":{}}
+                data[order.id]['orderitems'] =[]
+            data[order.id]['status'] = order.status
+            data[order.id]['revenue']+=orderitem.quantity*orderitem.price_at_purchase
+        
+            # data[order.id]['orderitems'][orderitem.id] = {"orderitem_id":orderitem.id,"quantity":orderitem.quantity , "price_at_purchasse":orderitem.price_at_purchase }
+            info = {"product_name":product.name ,"orderitem_id":orderitem.id,"quantity":orderitem.quantity , "price_at_purchasse":orderitem.price_at_purchase }
+            data[order.id]['orderitems'].append(info)
+        total_rev = sum([i['revenue'] for i in list(data.values())])
+        vendor_data['total_revenue'] = total_rev
+        vendor_data['orders'] = data
+        return vendor_data
 

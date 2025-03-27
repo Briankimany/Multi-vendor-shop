@@ -6,7 +6,7 @@ from functools import wraps
 from app.data_manager.session_manager import SessionManager
 from config.config import JSONConfig
 from app.data_manager.users_manager import UserManager
-from flask import session
+from flask import session , redirect , url_for
 
 
 config = JSONConfig('config.json')
@@ -37,6 +37,15 @@ def get_or_create_session():
     except Exception as e:
         LOG.MAIN_LOGGER.error(f"Error in get_or_create_session: {e}")
         return None 
+    
+
+def meet_vendor_requirements(func):
+    @wraps(func)
+    def decorated_func(*args , **kwargs):
+        if "vendor_id" not in session:
+            return redirect (url_for("vendor.login"))
+        return func(*args , **kwargs)
+    return decorated_func
     
 def session_set(func):
     @wraps(func)

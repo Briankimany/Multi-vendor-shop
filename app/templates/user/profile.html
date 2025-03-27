@@ -1,288 +1,761 @@
 {% extends 'shop/base2.html' %}
 
 {% block content %}
-    <div class="profile-container">
-        <h2>User Profile</h2>
-
-        <!-- Profile Information -->
-        <div class="profile-details">
-            <div class="profile-item">
-                <strong>Name:</strong> 
-                <span id="name-value">{{ user.name if user.name else 'Not Provided' }}</span>
-                <button onclick="editField('name')">Edit</button>
-            </div>
-
-            <div class="profile-item">
-                <strong>Email:</strong> 
-                <span id="email-value">{{ user.email if user.email else 'Not Provided' }}</span>
-                <button onclick="editField('email')">Edit</button>
-            </div>
-
-            <div class="profile-item">
-                <strong>Phone:</strong> 
-                <span id="phone-value">{{ user.phone if user.phone else 'Not Provided' }}</span>
-                <button onclick="editField('phone')">Edit</button>
-            </div>
-            <div class="profile-item">
-                <strong>Password:</strong>
-                <span id="password-value">********</span>
-                <button onclick="togglePasswordEdit()">Edit</button>
-            </div>
-            
-            <!-- Hidden Password Edit Form -->
-            <div id="password-edit" style="display: none;">
-                <label for="old-password">Old Password:</label>
-                <div class="password-container">
-                    <input type="password" id="old-password" placeholder="Enter old password">
-                    <span class="toggle-visibility" onclick="togglePassword('old-password')">👁️</span>
+<div class="profile-wrapper">
+    <div class="profile-card">
+        <div class="profile-header">
+            <h1 class="profile-title">My Profile</h1>
+            <div class="profile-avatar">
+                <div class="avatar-placeholder">
+                    {{ user.name|first|upper if user.name else 'U' }}
                 </div>
-            
-                <label for="new-password">New Password:</label>
-                <div class="password-container">
-                    <input type="password" id="new-password" placeholder="Enter new password">
-                    <span class="toggle-visibility" onclick="togglePassword('new-password')">👁️</span>
-                </div>
-            </div>
-            
-            
-            <div class="profile-item">
-                <strong>Created At:</strong> 
-                <span>{{ user.created_at }}</span>
+                <button class="avatar-upload" aria-label="Change profile picture">
+                    <i class="fas fa-camera"></i>
+                </button>
             </div>
         </div>
 
-        <!-- Save Changes Button -->
-        <button class="save-btn" onclick="saveChanges()">Save Changes</button>
+        <div class="profile-section">
+            <h2 class="section-title">Personal Information</h2>
+            
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <div class="input-group">
+                    <span class="static-value" id="name-value">{{ user.name if user.name else 'Not provided' }}</span>
+                    <div class="edit-controls" style="display:none">
+                        <input type="text" id="name-input" class="form-input" value="{{ user.name if user.name else '' }}">
+                        <div class="button-group">
+                            <button class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+                            <button class="btn btn-primary btn-sm save-edit">Save</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-edit edit-trigger">
+                        <i class="fas fa-pencil-alt"></i> Edit
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-group">
+                    <span class="static-value" id="email-value">{{ user.email if user.email else 'Not provided' }}</span>
+                    <div class="edit-controls" style="display:none">
+                        <input type="email" id="email-input" class="form-input" value="{{ user.email if user.email else '' }}">
+                        <div class="button-group">
+                            <button class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+                            <button class="btn btn-primary btn-sm save-edit">Save</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-edit edit-trigger">
+                        <i class="fas fa-pencil-alt"></i> Edit
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <div class="input-group">
+                    <span class="static-value" id="phone-value">{{ user.phone if user.phone else 'Not provided' }}</span>
+                    <div class="edit-controls" style="display:none">
+                        <input type="tel" id="phone-input" class="form-input" value="{{ user.phone if user.phone else '' }}">
+                        <div class="button-group">
+                            <button class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+                            <button class="btn btn-primary btn-sm save-edit">Save</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-edit edit-trigger">
+                        <i class="fas fa-pencil-alt"></i> Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <h2 class="section-title">Security</h2>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-group">
+                    <span class="static-value">••••••••</span>
+                    <button class="btn btn-edit" id="password-toggle">
+                        <i class="fas fa-pencil-alt"></i> Change
+                    </button>
+                </div>
+                
+                <div class="password-form" style="display:none">
+                    <div class="form-group">
+                        <label for="current-password">Current Password</label>
+                        <div class="password-input">
+                            <input type="password" id="current-password" class="form-input">
+                            <button class="btn btn-icon toggle-password" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-password">New Password</label>
+                        <div class="password-input">
+                            <input type="password" id="new-password" class="form-input">
+                            <button class="btn btn-icon toggle-password" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-meter">
+                                <div class="strength-bar"></div>
+                            </div>
+                            <span class="strength-text">Password strength</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm New Password</label>
+                        <div class="password-input">
+                            <input type="password" id="confirm-password" class="form-input">
+                            <button class="btn btn-icon toggle-password" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-secondary cancel-password">Cancel</button>
+                        <button class="btn btn-primary save-password">Update Password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-meta">
+            <div class="meta-item">
+                <span class="meta-label">Member since</span>
+                <span class="meta-value">{{ user.created_at.strftime('%B %d, %Y') }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Last updated</span>
+                <span class="meta-value">{{ user.updated_at.strftime('%B %d, %Y') if user.updated_at else 'Never' }}</span>
+            </div>
+        </div>
     </div>
-    <style>
-        .profile-container {
-            margin: 40px auto;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            background-color: #f4f4f9;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-    
-        h2 {
-            margin-bottom: 20px;
-            color: #333;
-            text-align: center;
-            font-weight: 500;
-        }
-    
-        .profile-details {
-            margin-bottom: 20px;
-        }
-    
-        .profile-item {
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-    
-        .profile-item strong {
-            color: #444;
-            flex-basis: 30%;
-            margin-bottom: 5px;
-            min-width: 120px;
-        }
-    
-        .profile-item span {
-            flex-grow: 1;
-            color: #555;
-            margin-bottom: 5px;
-        }
-    
-        .profile-item button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-top: 5px;
-            min-width: 80px;
-        }
-    
-        .profile-item button:hover {
-            background-color: #0056b3;
-        }
-    
-        #password-edit {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: none;  /* Initially hidden */
-        }
-    
-        #password-edit label {
-            display: block;
-            margin-bottom: 8px;
-            color: #444;
-            font-weight: 500;
-        }
-    
-        #password-edit input {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-    
-        #password-edit input:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-        }
-    
-        .save-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
-    
-        .save-btn:hover {
-            background-color: #218838;
-        }
-    
-        @media screen and (max-width: 600px) {
-            .profile-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-    
-            .profile-item strong {
-                margin-bottom: 5px;
-            }
-    
-            .profile-item button {
-                align-self: flex-end;
-            }
-        }
-    </style>
-    
-    <script>
-        function editField(field) {
-            const valueSpan = document.getElementById(`${field}-value`);
-            const currentValue = valueSpan.textContent;
+</div>
 
-            // Create an input field to edit the value
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentValue;
-            input.id = `${field}-input`;
+<style>
+:root {
+    --primary: #4361ee;
+    --primary-light: #e6e9f9;
+    --secondary: #3f37c9;
+    --success: #4cc9f0;
+    --danger: #f72585;
+    --warning: #f8961e;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --gray: #6c757d;
+    --gray-light: #e9ecef;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+}
 
-            // Replace the text span with the input field
-            valueSpan.replaceWith(input);
-        }
-        function togglePasswordEdit() {
-            const passwordEditDiv = document.getElementById('password-edit');
-            passwordEditDiv.style.display = 
-                passwordEditDiv.style.display === 'none' ? 'block' : 'none';
-        }
-        function saveChanges() {
-            const fields = ['name', 'email', 'phone'];
-            let data = {};
+/* Base Styles */
+.profile-wrapper {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
 
-            // Collect updated field values
-            fields.forEach(field => {
-                    const input = document.getElementById(`${field}-input`);
-                    const value = input ? input.value : document.getElementById(`${field}-value`).textContent;
-                    data[field] = value;
-                });
+.profile-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+    padding: 2rem;
+}
 
-                // Check if the password fields are filled
-                const oldPassword = document.getElementById('old-password').value;
-                const newPassword = document.getElementById('new-password').value;
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
 
-                if (oldPassword && newPassword) {
-                    data['old_password'] = oldPassword;
-                    data['new_password'] = newPassword;
-                }
+.profile-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0;
+}
 
-                // Send POST request to update profile
-                fetch("{{ url_for('user.edit_profile') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ data: data })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Profile updated successfully!');
-                        location.reload(); // Refresh the page to show updated details
-                    } else {
-                        alert('Failed to update profile. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error("Error updating profile:", error);
-                    alert('An error occurred while updating your profile.');
-                });
-        }
-        function togglePassword(fieldId) {
-    const passwordInput = document.getElementById(fieldId);
-    const toggleIcon = passwordInput.nextElementSibling;
+.profile-avatar {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
 
-    if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        toggleIcon.textContent = "🙈";  // Change icon to "hide"
-    } else {
-        passwordInput.type = "password";
-        toggleIcon.textContent = "👁️";  // Change icon to "show"
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.avatar-upload {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+}
+
+.avatar-upload:hover {
+    background: var(--secondary);
+    transform: scale(1.05);
+}
+
+.profile-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.static-value {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.5rem 0;
+    color: var(--dark);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-edit {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.btn-edit:hover {
+    background: var(--primary-light);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--secondary);
+}
+
+.btn-secondary {
+    background: var(--gray-light);
+    color: var(--dark);
+}
+
+.btn-secondary:hover {
+    background: #d1d7e0;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    background: transparent;
+    color: var(--gray);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-light);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    outline: none;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.password-input {
+    position: relative;
+}
+
+.password-input .form-input {
+    padding-right: 2.5rem;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gray);
+}
+
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-meter {
+    height: 4px;
+    background: var(--gray-light);
+    border-radius: 2px;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0;
+    background: var(--danger);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    color: var(--gray);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-light);
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-label {
+    font-size: 0.875rem;
+    color: var(--gray);
+}
+
+.meta-value {
+    font-weight: 500;
+    color: var(--dark);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .profile-avatar {
+        margin-top: 1rem;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .btn-edit {
+        align-self: flex-end;
+    }
+    
+    .edit-controls {
+        width: 100%;
+    }
+    
+    .button-group {
+        align-self: flex-end;
     }
 }
-    
 
-    </script>
-    <style>
-        .password-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+@media (max-width: 480px) {
+    .profile-card {
+        padding: 1.5rem;
+    }
     
-        input[type="password"], input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
+    .form-actions {
+        flex-direction: column;
+    }
     
-        .toggle-visibility {
-            position: absolute;
-            right: 10px;
-            cursor: pointer;
-            font-size: 1.2em;
-            color: #666;
-        }
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* ===== Extra Responsive Styles ===== */
+
+/* Large Desktop Screens (1200px and up) */
+@media (min-width: 1200px) {
+    .profile-wrapper {
+        max-width: 1000px;
+        padding: 2rem;
+    }
     
-        .toggle-visibility:hover {
-            color: #000;
-        }
-    </style>
+    .profile-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
     
+    .profile-meta {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Medium Screens (Tablets, 768px-992px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .profile-card {
+        padding: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .avatar-upload {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* Small Tablets (576px-767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+    .profile-header {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .profile-title {
+        font-size: 1.5rem;
+    }
+    
+    .input-group {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .btn-edit {
+        margin-left: auto;
+    }
+}
+
+/* Mobile Phones (up to 575px) */
+@media (max-width: 575px) {
+    .profile-wrapper {
+        padding: 0.5rem;
+    }
+    
+    .profile-card {
+        padding: 1rem;
+        border-radius: 0;
+    }
+    
+    .profile-title {
+        font-size: 1.4rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .static-value, 
+    .form-input {
+        font-size: 0.95rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .avatar-upload {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+    }
+    
+    .password-form {
+        padding: 0.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+    
+    .profile-meta {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+/* Ultra Small Phones (up to 360px) */
+@media (max-width: 360px) {
+    .profile-title {
+        font-size: 1.3rem;
+    }
+    
+    .btn {
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .input-group {
+        gap: 0.5rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .button-group .btn {
+        width: 100%;
+    }
+    
+    .edit-controls {
+        gap: 0.5rem;
+    }
+}
+
+/* Orientation-specific adjustments */
+@media (max-width: 767px) and (orientation: landscape) {
+    .profile-wrapper {
+        padding: 0.5rem;
+    }
+    
+    .profile-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .profile-header {
+        flex-direction: row;
+    }
+}
+
+/* High-density displays */
+@media 
+only screen and (-webkit-min-device-pixel-ratio: 2),
+only screen and (min-resolution: 192dpi) {
+    .profile-card {
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .form-input {
+        border-width: 1.5px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .profile-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        padding: 1rem;
+    }
+    
+    .btn, .avatar-upload {
+        display: none !important;
+    }
+    
+    .password-form {
+        display: none !important;
+    }
+    
+    .profile-wrapper {
+        max-width: 100%;
+        padding: 0;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit field functionality
+    document.querySelectorAll('.edit-trigger').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.input-group');
+            container.querySelector('.static-value').style.display = 'none';
+            container.querySelector('.edit-controls').style.display = 'block';
+            this.style.display = 'none';
+            container.querySelector('.form-input').focus();
+        });
+    });
+    
+    // Cancel edit
+    document.querySelectorAll('.cancel-edit').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.input-group');
+            container.querySelector('.static-value').style.display = 'block';
+            container.querySelector('.edit-controls').style.display = 'none';
+            container.querySelector('.edit-trigger').style.display = 'inline-flex';
+        });
+    });
+    
+    // Toggle password form
+    document.getElementById('password-toggle').addEventListener('click', function() {
+        const form = this.closest('.form-group').querySelector('.password-form');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Cancel password change
+    document.querySelector('.cancel-password')?.addEventListener('click', function() {
+        this.closest('.password-form').style.display = 'none';
+    });
+    
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    });
+    
+    // Password strength meter
+    document.getElementById('new-password')?.addEventListener('input', function() {
+        const password = this.value;
+        const strengthBar = this.closest('.form-group').querySelector('.strength-bar');
+        const strengthText = this.closest('.form-group').querySelector('.strength-text');
+        
+        // Calculate strength
+        let strength = 0;
+        if (password.length > 0) strength += 20;
+        if (password.length >= 8) strength += 20;
+        if (/[A-Z]/.test(password)) strength += 20;
+        if (/[0-9]/.test(password)) strength += 20;
+        if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+        
+        // Update UI
+        strengthBar.style.width = `${strength}%`;
+        
+        if (strength < 40) {
+            strengthBar.style.backgroundColor = 'var(--danger)';
+            strengthText.textContent = 'Weak password';
+        } else if (strength < 80) {
+            strengthBar.style.backgroundColor = 'var(--warning)';
+            strengthText.textContent = 'Moderate password';
+        } else {
+            strengthBar.style.backgroundColor = 'var(--success)';
+            strengthText.textContent = 'Strong password';
+        }
+    });
+    
+    // Save changes (simplified example)
+    document.querySelectorAll('.save-edit').forEach(button => {
+        button.addEventListener('click', function() {
+            // In a real app, you would send this to your backend
+            const input = this.closest('.edit-controls').querySelector('.form-input');
+            const value = input.value;
+            const field = input.id.replace('-input', '');
+            
+            // Update the displayed value
+            const valueSpan = document.getElementById(`${field}-value`);
+            valueSpan.textContent = value || 'Not provided';
+            
+            // Hide edit controls
+            this.closest('.edit-controls').style.display = 'none';
+            valueSpan.style.display = 'block';
+            this.closest('.input-group').querySelector('.edit-trigger').style.display = 'inline-flex';
+            
+            // Show success feedback
+            alert(`${field.charAt(0).toUpperCase() + field.slice(1)} updated successfully!`);
+        });
+    });
+});
+</script>
 {% endblock %}

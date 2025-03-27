@@ -7,6 +7,7 @@ from app.routes.logger import LOG
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.product import Product
+from .vendor import VendorObj
 
 class UserManager:
     def __init__(self , db_session:Session , user = None):
@@ -107,9 +108,44 @@ class UserManager:
         return orders
     
     def get_my_previous_order_items(self , order_id):
+        """
+        {
+            "order_date": "2023-01-01T00:00:00",
+            "status": "completed",
+            "payment_type": "pre-delivery",
+            "total_amount": 99.99,
+            "items": [
+                {
+                    "product_id": 123,
+                    "product_name": "Product Name",
+                    "image_url": "/path/to/image.jpg",
+                    "quantity": 2,
+                    "price_at_purchase": 49.99
+                }
+            ]
+        }
+        """
+
         items = UserManager.get_order_items_for_order_id(db_session=self.db_session ,
                                                          order_id=order_id)
-        return items
+        
+        order = self.db_session.query(Order).filter(Order.id == order_id).first()
+        data = {"order_date":order.created_at.strftime("%Y-%m-%dT%H:%M:%S") , "status":order.status,
+            "payment_type":order.payment_type ,"total_amount":float(order.total_amount)}
+        data['items'] = items
+        
+        return data
+    
+    def is_vendor(self):
+        if self.user:
+            return UserManager.verify_is_vendor(user_name=self.user.name)
+        
+
+    @staticmethod
+    def verify_is_vendor(user_name:str):
+        vendor = VendorObj.get_vendor_by(key='name' , value=user_name)
+        return vendor
+    
     
     @staticmethod
     def register_user(db_session:Session , user_details:dict , return_self_instance = False):
@@ -153,13 +189,14 @@ class UserManager:
         return orders if orders else None
     @staticmethod
     def get_order_items_for_order_id(db_session:Session , order_id:int):
- 
+
         order_items = (
             db_session.query(OrderItem, Product)
             .join(Product, OrderItem.product_id == Product.id)
             .filter(OrderItem.order_id == order_id)
             .all()
         )
+        
         items = [
             {
                 "product_id": product.id,

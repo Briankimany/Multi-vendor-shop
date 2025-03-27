@@ -1,7 +1,9 @@
 
 from sqlalchemy.orm import Session
 from app.models.order import Order
-from app.models.order_item import OrderItem
+from app.models.order_item import OrderItem , VendorOrder
+from app.models.product import Product
+
 from config.config import JSONConfig
 from .session_manager import SessionManager
 from .database_index import Database
@@ -25,6 +27,7 @@ class OrderManager:
         self.db_session = db_session
         self.order = self.db_session.query(Order).where(Order.id == order_id).first() if not isinstance(order_id , Order) else order_id
         self.config = JSONConfig(json_path="config.json")
+
     @staticmethod
     def get_order_by_session_tkn(db_session:Session , session_tkn):
         """
@@ -39,7 +42,45 @@ class OrderManager:
          """
         return db_session.query(Order).filter(Order.session == session_tkn, Order.status != "paid" ,Order.status != "canceled").first()
 
-       
+
+    @staticmethod
+    def group_orders_to_vendors(db_session:Session , orderid:int):
+        sorted_orders = (
+            db_session.query(OrderItem.id ,Product.vendor_id)
+            .join(Product, OrderItem.product_id == Product.id)
+            .filter(OrderItem.order_id == orderid)
+            .order_by(Product.vendor_id) 
+            .all()
+        )
+        grouped = {}
+        for orderitem , vendorid in sorted_orders:
+            if vendorid not in grouped:
+                grouped[vendorid]=[]
+            grouped[vendorid].append(orderitem)
+        
+  
+        LOG.ORDER_LOGGER.info("Initiating creation of vendor orders")
+        LOG.ORDER_LOGGER.info(f"Data = {grouped}")
+
+        vendororders = []
+        for vendor_id, orderitems in grouped.items():
+            for orderitem in orderitems:
+                exists = db_session.query(VendorOrder).filter_by(
+                    vendorid=vendor_id, orderid=orderid, orderitem=orderitem
+                ).first()
+
+                if not exists:
+                    vendororders.append(
+                        VendorOrder(vendorid=vendor_id, orderid=orderid, orderitem=orderitem)
+                    )
+
+        if vendororders:
+            db_session.add_all(vendororders)
+            db_session.commit()
+            LOG.ORDER_LOGGER.info(f"Added {len(vendororders)} new vendor orders.")
+        else:
+            LOG.ORDER_LOGGER.info("No new vendor orders were added.")
+
     @staticmethod
     def create_new_order(db_session:Session, session_tkn, phone_number=None, 
                          total_amount=None, payment_type=None, cart_id=None, items=[], user_id=None) :
@@ -69,7 +110,6 @@ class OrderManager:
         LOG.ORDER_LOGGER.info(f"Initiating order creation for session: {session_tkn}")
 
         order = OrderManager.get_order_by_session_tkn(db_session=db_session,session_tkn=session_tkn)
-    
         try:
             if not order:
                 if not user_id:
@@ -82,10 +122,11 @@ class OrderManager:
                     user_id=user_id,
                     phone_number=phone_number,
                     total_amount=total_amount,
-                    status="pending",  # Default status
+                    status="pending", 
                     payment_type=payment_type,
-                    vendor_id=cart_id
+                    cart_id=cart_id
                 )
+
                 db_session.add(new_order)
                 db_session.commit()  
 
@@ -104,10 +145,13 @@ class OrderManager:
                 LOG.ORDER_LOGGER.info(f"{len(items)} order items added for Order ID: {new_order.id}")
                 db_session.add_all(order_items)
                 db_session.commit()
+                db_session.flush()
+                
                 order = new_order
             else:
                 LOG.ORDER_LOGGER.info(f"Existing order found for session: {session_tkn}, Order ID: {order.id}")
 
+            OrderManager.group_orders_to_vendors(db_session=db_session ,orderid=order.id)
             return OrderManager(db_session=db_session , order_id=order)
         except SQLAlchemyError as e:
             db_session.rollback()
@@ -133,7 +177,7 @@ class OrderManager:
                 "total_amount": float,
                 "status": str,
                 "payment_type": str,
-                "vendor_id": int ,
+                "cart_id": int ,
                 "created_at": datetime,
                 "updated_at": datetime,
                 "items": [
@@ -157,7 +201,7 @@ class OrderManager:
             "total_amount": float(self.order.total_amount),
             "status": self.order.status,
             "payment_type": self.order.payment_type,
-            "vendor_id": self.order.vendor_id,
+            "cart_id": self.order.cart_id,
             "created_at": self.order.created_at,
             "updated_at": self.order.updated_at,
         }
@@ -178,7 +222,6 @@ class OrderManager:
         """ Delete the order and its associated items """
         if not self.order:
             return False
-
         try:
             self.db_session.query(OrderItem).filter_by(order_id=self.order.id).delete()
             self.db_session.delete(self.order)
@@ -189,7 +232,45 @@ class OrderManager:
             self.db_session.rollback()
             print(f"Database Error: {e}")
             return False
-        
+    def update_stock(self , order_id:int):
+        return OrderManager.update_stock_after_order(session=self.db_session , order_id=order_id)
+
+
+    @staticmethod
+    def update_stock_after_order(session: Session, order_id: int):
+        """
+        Updates product stock by reducing quantities based on the given order ID.
+
+        Args:
+            session (Session): SQLAlchemy database session.
+            order_id (int): The ID of the order.
+        """
+        try:
+           
+            order_items = session.query(OrderItem).filter_by(order_id=order_id).all()
+
+            if not order_items:
+                print(f"No items found for order ID: {order_id}")
+                return
+
+            for item in order_items:
+                product = session.query(Product).filter_by(id=item.product_id).first()
+
+                if product:
+                    
+                    if product.stock >= item.quantity:
+                        product.stock -= item.quantity
+                    else:
+                        LOG.ORDER_LOGGER.info(f"Not enough stock for Product ID {product.id} (Requested: {item.quantity}, Available: {product.stock})")
+                        continue
+
+            session.commit()
+            print(f"Stock updated successfully for order ID: {order_id}")
+
+        except Exception as e:
+            session.rollback()  # Rollback in case of an error
+            print(f"Error updating stock: {e}")
+
     def update_order(self, order_id: int, **kwargs):
         """
         Updates specified attributes of an existing order.

@@ -3,37 +3,88 @@
 {% block title %}My Products{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h2 class="mb-3 page-title">My Products</h2>
-        <a href="{{ url_for('vendor.add_product') }}" class="btn btn-primary btn-add">Add New Product</a>
+    <div class="vendor-products-container">
+        <div class="products-header">
+            <h2 class="page-title">My Products</h2>
+            <div class="header-actions">
+                <a href="{{ url_for('vendor.add_product') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Product
+                </a>
+                <div class="search-filter">
+                    <input type="text" id="productSearch" placeholder="Search products..." class="search-input">
+                    <select id="categoryFilter" class="filter-select">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
 
         {% if products %}
             <!-- TABLE FOR LARGE SCREENS -->
-            <div class="table-wrapper table">
+            <div class="products-table">
                 <table class="styled-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Description</th>
+                            <th>Product</th>
+                            <th>Details</th>
                             <th>Price</th>
                             <th>Stock</th>
-                            <th>Category</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for product in products %}
-                            <tr>
-                                <td>{{ product.name }}</td>
-                                <td>{{ product.description }}</td>
-                                <td>${{ product.price }}</td>
-                                <td>{{ product.stock }}</td>
-                                <td>{{ product.category }}</td>
-                                <td class="actions">
-                                    <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn btn-sm btn-warning btn-edit">Edit</a>
-                                    <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            <tr class="product-row" data-category="{{ product.category }}">
+                                <td class="product-info">
+                                    {% if product.image_url %}
+                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-thumbnail">
+                                    {% else %}
+                                        <div class="thumbnail-placeholder">
+                                            <i class="fas fa-box-open"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ product.name }}</strong>
+                                        <small>{{ product.category }}</small>
+                                    </div>
+                                </td>
+                                <td class="product-description">
+                                    {{ product.description|truncate(100) }}
+                                </td>
+                                <td class="product-price">
+                                    ${{ "%.2f"|format(product.price) }}
+                                </td>
+                                <td class="product-stock">
+                                    <span class="stock-badge {% if product.stock > 10 %}in-stock{% elif product.stock > 0 %}low-stock{% else %}out-of-stock{% endif %}">
+                                        {{ product.stock }}
+                                    </span>
+                                    
+                                </td>
+                                <td class="product-status">
+                                    {% if product.stock > 10 %}
+                                        <span class="status-badge active">Active</span>
+                                    {% elif product.stock > 0 %}
+                                        <span class="status-badge low-stock">Low Stock</span>
+                                    {% else %}
+                                        <span class="status-badge inactive">Out of Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td class="product-actions">
+                                    <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn-action btn-edit" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" class="delete-form">
+                                        <button type="submit" class="btn-action btn-delete" title="Delete" onclick="return confirm('Are you sure you want to delete this product?')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </form>
+                                    <a href="{{ url_for('vendor.product_details', product_id=product.id) }}" class="btn-action btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -41,29 +92,535 @@
                 </table>
             </div>
 
-            <!-- FLEX CARDS FOR SMALL SCREENS -->
-            <div class="table-wrapper cards">
+            <!-- CARDS FOR SMALL SCREENS -->
+            <div class="products-grid">
                 {% for product in products %}
-                    <div class="product-card">
-                        <h3>{{ product.name }}</h3>
-                        <p><strong>Description:</strong> {{ product.description }}</p>
-                        <p><strong>Price:</strong> ${{ product.price }}</p>
-                        <p><strong>Stock:</strong> {{ product.stock }}</p>
-                        <p><strong>Category:</strong> {{ product.category }}</p>
-                        <div class="actions">
-                            <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn-edit">Edit</a>
-                            <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" style="display:inline;">
-                                <button type="submit" class="btn-delete">Delete</button>
+                    <div class="product-card" data-category="{{ product.category }}">
+                        <div class="card-header">
+                            {% if product.image_url %}
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="card-image">
+                            {% else %}
+                                <div class="image-placeholder">
+                                    <i class="fas fa-box-open"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-status">
+                                {% if product.stock > 10 %}
+                                    <span class="status-badge active">Active</span>
+                                {% elif product.stock > 0 %}
+                                    <span class="status-badge low-stock">Low Stock</span>
+                                {% else %}
+                                    <span class="status-badge inactive">Out of Stock</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3>{{ product.name }}</h3>
+                            <p class="card-category">{{ product.category }}</p>
+                            <p class="card-description">{{ product.description|truncate(80) }}</p>
+                            <div class="card-details">
+                                <div class="detail-item">
+                                    <span>Price:</span>
+                                    <strong>${{ "%.2f"|format(product.price) }}</strong>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Stock:</span>
+                                    <span class="stock-badge {% if product.stock > 10 %}in-stock{% elif product.stock > 0 %}low-stock{% else %}out-of-stock{% endif %}">
+                                        {{ product.stock }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn-action btn-edit" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form action="{{ url_for('vendor.delete_product', product_id=product.id) }}" method="post" class="delete-form">
+                                <button type="submit" class="btn-action btn-delete" title="Delete" onclick="return confirm('Are you sure you want to delete this product?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </form>
+                            <a href="{{ url_for('vendor.edit_product', product_id=product.id) }}" class="btn-action btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p class="no-products">No products found.</p>
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <h3>No Products Found</h3>
+                <p>You haven't added any products yet. Get started by adding your first product.</p>
+                <a href="{{ url_for('vendor.add_product') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Product
+                </a>
+            </div>
         {% endif %}
     </div>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-dark: #1f2937;
+            --text-medium: #6b7280;
+            --text-light: #9ca3af;
+            --border: #e5e7eb;
+            --bg-light: #f9fafb;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.2s ease;
+        }
+
+        .vendor-products-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .products-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            min-width: 200px;
+        }
+
+        .filter-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background-color: white;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        /* Table Styles */
+        .products-table {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .styled-table thead tr {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .styled-table th,
+        .styled-table td {
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .styled-table th {
+            font-weight: 500;
+        }
+
+        .styled-table tbody tr {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .styled-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .styled-table tbody tr:hover {
+            background-color: var(--bg-light);
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .product-thumbnail {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .thumbnail-placeholder {
+            width: 50px;
+            height: 50px;
+            background-color: var(--bg-light);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+        }
+
+        .product-description {
+            color: var(--text-medium);
+            max-width: 300px;
+        }
+
+        .stock-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .stock-badge.in-stock {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .stock-badge.low-stock {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .stock-badge.out-of-stock {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.low-stock {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-edit {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn-edit:hover {
+            background-color: #fde68a;
+        }
+
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-delete:hover {
+            background-color: #fecaca;
+        }
+
+        .btn-view {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .btn-view:hover {
+            background-color: #bfdbfe;
+        }
+
+        /* Card Styles */
+        .products-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            position: relative;
+            height: 160px;
+            background-color: var(--bg-light);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 2rem;
+        }
+
+        .card-status {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .product-card h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .card-category {
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .card-description {
+            color: var(--text-medium);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-item span {
+            font-size: 0.75rem;
+            color: var(--text-medium);
+        }
+
+        .detail-item strong {
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .empty-state p {
+            color: var(--text-medium);
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .products-table {
+                display: none;
+            }
+            
+            .products-grid {
+                display: grid;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            
+            .search-filter {
+                width: 100%;
+            }
+            
+            .search-input {
+                flex-grow: 1;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .vendor-products-container {
+                padding: 1rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            const searchInput = document.getElementById('productSearch');
+            const productRows = document.querySelectorAll('.product-row, .product-card');
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                productRows.forEach(row => {
+                    const productName = row.querySelector('h3, .product-info strong').textContent.toLowerCase();
+                    const productDesc = row.querySelector('.product-description, .card-description')?.textContent.toLowerCase() || '';
+                    
+                    if (productName.includes(searchTerm) || productDesc.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Category filter
+            const categoryFilter = document.getElementById('categoryFilter');
+            
+            categoryFilter.addEventListener('change', function() {
+                const selectedCategory = this.value;
+                
+                productRows.forEach(row => {
+                    const rowCategory = row.getAttribute('data-category');
+                    
+                    if (!selectedCategory || rowCategory === selectedCategory) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
 <style>
+
+
+
     /* General Styles */
 .container {
     width: 95%;

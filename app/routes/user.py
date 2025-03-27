@@ -19,10 +19,6 @@ db_session = Session()
 user_bp = Blueprint("user", __name__, url_prefix="/user")
 user_obj = UserManager(db_session=db_session , user=None)
 
-
-
-
-
 def force_user_reload(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -49,11 +45,12 @@ def login():
         name = request.form["identifier"]
         password = request.form["password"] 
         verified = user_obj.verify_password(password=password , user=name)  
-     
+        is_vendor = session.get('IS_VENDOR' , None) == True
+       
         if verified:
             user_obj.reload_object(user=name)
             session["user_id"] = user_obj.user.id
-
+            session['user_name'] =name
             previous_token = user_obj.get_tkn_from_user_id()
             if previous_token:
                 session['session_token'] = previous_token.token
@@ -62,13 +59,19 @@ def login():
             user_obj.self_update_session(data={'user_id':user_obj.user.id})
 
             LOG.USER_LOGGER.info(f"[LOGED IN] {user_obj}")
+            if  is_vendor:
+                session['IS_VENDOR'] = None
+                vendor = user_obj.is_vendor()
+                if vendor:
+                    session['vendor_id'] =vendor.id
+                    return redirect (url_for('vendor.dashboard'))
             return redirect(url_for("shop.shop_home"))
-    
 
     return render_template("login/login.html")
 
 
 @user_bp.route("/register", methods=["GET", "POST"])
+@session_set
 def register():
     """User registration"""
     if request.method == "POST":
@@ -84,11 +87,14 @@ def register():
             return render_template("login/register.html" , message = "enter a unique name")
 
         session["user_id"] = user_obj.user.id  
+        session['user_name'] = user_obj.user.name
         user_obj.session_tkn = session['session_token']
         user_obj.self_update_session(data={'user_id':user_obj.user.id})
-    
+       
+        if session.get('vendor_register' , None):
+            session['vendor_register'] = None
+            return redirect (url_for ("vendor.add_details"))
         return redirect(url_for("shop.shop_home"))
-
     return render_template("login/register.html")
 
 
@@ -150,4 +156,19 @@ def orders():
 @session_set
 def get_order_items(order_id):
     items = user_obj.get_my_previous_order_items(order_id)
-    return jsonify({"items": items})
+    print(items)
+
+    return jsonify(items)
+
+
+
+@user_bp.route("/forgot_password", methods=["GET", "POST"])
+@force_user_reload
+@session_set
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        if  'user'not in session:
+            return redirect(url_for("login"))
+
+    return render_template("user/forgot_password.html")

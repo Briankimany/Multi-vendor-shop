@@ -3,8 +3,9 @@ from sqlalchemy.sql import func
 
 from .base import Base
 from .user_profile import UserProfile 
-from .vendor import Vendor
 from .session_tracking import SessionTracking
+from .cart import Cart
+
 class Order(Base):
     __tablename__ = 'orders'
     
@@ -14,7 +15,7 @@ class Order(Base):
     phone_number = Column(String, nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False)
     status = Column(String, default='pending')  # pending, paid, canceled
-    payment_type = Column(String)  # pre-delivery or payment-on-delivery
-    vendor_id = Column(Integer, ForeignKey(Vendor.id), nullable=False)  # Correct foreign key reference
+    payment_type = Column(String)  
+    cart_id = Column(Integer, ForeignKey(Cart.id), nullable=False)  
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

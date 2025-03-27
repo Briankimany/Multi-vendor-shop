@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --text-dark: #1f2937;
+            --text-medium: #6b7280;
+            --text-light: #9ca3af;
+            --border: #e5e7eb;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: var(--text-dark);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .vendor-container {
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .vendor-container:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .vendor-header {
+            background-color: white;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .vendor-header:hover {
+            background-color: var(--primary-light);
+        }
+
+        .vendor-header.active {
+            background-color: var(--primary-light);
+        }
+
+        .vendor-header i {
+            transition: transform 0.2s ease;
+        }
+
+        .vendor-header.active i {
+            transform: rotate(180deg);
+        }
+
+        .vendor-content {
+            display: none;
+            padding: 1rem 1.5rem;
+            background-color: white;
+            border-top: 1px solid var(--border);
+        }
+
+        .vendor-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .vendor-info p {
+            margin: 0;
+        }
+
+        .vendor-info strong {
+            display: block;
+            color: var(--text-medium);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .vendor-info span {
+            font-size: 1rem;
+        }
+
+        .orders-header {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin: 1.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-container {
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .order-header {
+            padding: 1rem;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .order-header:hover {
+            background-color: #f9fafb;
+        }
+
+        .order-header.active {
+            background-color: #f9fafb;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-completed {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .order-content {
+            display: none;
+            padding: 1rem;
+            background-color: white;
+            border-top: 1px solid var(--border);
+        }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-items {
+            list-style: none;
+        }
+
+        .order-items li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .order-items li:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            flex: 2;
+        }
+
+        .item-qty {
+            flex: 1;
+            text-align: center;
+        }
+
+        .item-price {
+            flex: 1;
+            text-align: right;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .vendor-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+
+    {% for vendor in vendors %}
+    <div class="vendor-container">
+        <div class="vendor-header" onclick="toggleVendor('{{ vendor.id }}', this)">
+            <div>
+                <span>{{ vendor.name }}</span>
+                <small style="color: var(--text-medium); margin-left: 0.5rem;">({{ vendor.orders|length }} orders)</small>
+            </div>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="vendor-content" id="vendor-{{ vendor.id }}">
+            <div class="vendor-info">
+                <div>
+                    <strong>Email</strong>
+                    <span>{{ vendor.email }}</span>
+                </div>
+                <div>
+                    <strong>Total Products</strong>
+                    <span>{{ vendor.product_count }}</span>
+                </div>
+                <div>
+                    <strong>Total Sales</strong>
+                    <span>${{ "%.2f"|format(vendor.total_sales) }}</span>
+                </div>
+            </div>
+
+            {% if vendor.orders %}
+            <h4 class="orders-header"><i class="fas fa-clipboard-list"></i> Orders</h4>
+            
+            {% for order in vendor.orders %}
+                <div class="order-container">
+                    <div class="order-header" onclick="toggleOrder('{{ order.id }}', this)">
+                        <div>
+                            <span>Order #{{ order.id }}</span>
+                            <span class="order-status status-{{ order.status|lower }}">{{ order.status }}</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="order-content" id="order-{{ order.id }}">
+                        <div class="order-details">
+                            <div>
+                                <strong>Date</strong>
+                                <span>{{ order.date }}</span>
+                            </div>
+                            <div>
+                                <strong>Customer</strong>
+                                <span>{{ order.customer_name or 'Guest' }}</span>
+                            </div>
+                            <div>
+                                <strong>Total</strong>
+                                <span>${{ "%.2f"|format(order.total) }}</span>
+                            </div>
+                        </div>
+                        
+                        <h5>Items:</h5>
+                        <ul class="order-items">
+                            {% for item in order.items %}
+                            <li>
+                                <span class="item-name">{{ item.product_name }}</span>
+                                <span class="item-qty">{{ item.quantity }} ×</span>
+                                <span class="item-price">${{ "%.2f"|format(item.price) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endfor %}
+            {% else %}
+                <p style="color: var(--text-medium);">No orders found for this vendor.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        function toggleVendor(vendorId, element) {
+            const content = document.getElementById("vendor-" + vendorId);
+            const isHidden = content.style.display === "none" || content.style.display === "";
+            
+            // Toggle display
+            content.style.display = isHidden ? "block" : "none";
+            
+            // Toggle active class
+            element.classList.toggle("active", isHidden);
+            
+            // Close all orders when closing vendor
+            if (!isHidden) {
+                const orderContents = content.querySelectorAll(".order-content");
+                orderContents.forEach(orderContent => {
+                    orderContent.style.display = "none";
+                    const header = orderContent.previousElementSibling;
+                    if (header) header.classList.remove("active");
+                });
+            }
+        }
+
+        function toggleOrder(orderId, element) {
+            const content = document.getElementById("order-" + orderId);
+            const isHidden = content.style.display === "none" || content.style.display === "";
+            
+            // Toggle display
+            content.style.display = isHidden ? "block" : "none";
+            
+            // Toggle active class
+            element.classList.toggle("active", isHidden);
+        }
+
+        // Optional: Auto-expand if there's only one vendor
+        document.addEventListener('DOMContentLoaded', function() {
+            const vendors = document.querySelectorAll('.vendor-container');
+            if (vendors.length === 1) {
+                const firstVendor = vendors[0];
+                const header = firstVendor.querySelector('.vendor-header');
+                toggleVendor(header.getAttribute('onclick').match(/'([^']+)'/)[1], header);
+            }
+        });
+    </script>
+</body>
+</html>

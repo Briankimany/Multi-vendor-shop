@@ -34,6 +34,12 @@
             <label for="preview_url">Preview URL</label>
             <input type="text" id="preview_url" name="preview_url" value="{{ product.preview_url }}">
 
+            <label for="upload image">Or Upload image:</label>
+            <input type="file" id="image_file="product image" accept="image/*">
+            
+            <img id="preview" style="max-width: 200px; display: none; margin-top: 10px;">
+            
+
             <!-- Submit Button -->
             <button type="submit" class="update-button">Update Product</button>
         </form>
@@ -45,6 +51,35 @@
         </div>
     </div>
 </div>
+<script>
+    function uploadImageThenSubmit() {
+    const fileInput = document.getElementById("store_logo_file");
+    const urlInput = document.getElementById("store_logo");
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("store_logo_file", file);
+
+        fetch("/vendor/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                urlInput.value = data.image_url; // Set uploaded image URL
+                submitVendorForm(); // Now call the existing function
+            } else {
+                alert("Image upload failed.");
+            }
+        })
+        .catch(error => console.error("Upload error:", error));
+    } else {
+        submitVendorForm(); // Directly call it if only a URL is provided
+    }
+}
+</script>
 <style>
     /* Main Container */
 .edit-product-container {

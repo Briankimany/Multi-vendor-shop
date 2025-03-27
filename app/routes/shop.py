@@ -72,7 +72,22 @@ def vendor_products(vendor_id):
     session['vendor_id']=vendor_id
     vendor = VendorObj(vendor_id=vendor_id, db_session=db_session)
     products = vendor.get_product("vendor_id", vendor_id, occurrence="all")
-    return render_template("shop/products2.html", products=products ,vendor=vendor.vendor_table)
+    
+    final_data = {}
+    for product in products:
+        key = product.category
+        if key not in final_data:
+            final_data[key]=[]
+        final_data[key].append(product)
+        
+    class Category:
+        def __init__(self , name , products_list):
+            self.name = name 
+            self.products = products_list
+    p = [Category(k , v) for  k , v in final_data.items()]
+
+    
+    return render_template("shop/products.html", categories=p ,vendor=vendor.vendor_table)
 
 @shop_bp.route("/product/<product_id>")
 @vendor_selected
@@ -125,11 +140,13 @@ def remove_from_cart():
 def view_cart(): 
     """Displays the user's cart."""
     session_token = session["session_token"]
-    print("User is currently using sessin tokn "+session_token)
+  
     cart_id = session_manager.get_cart(session_token)
     cart_items = session_manager.get_cartitems(cart_id=cart_id)
-    
-    return render_template("shop/cart.html", cart_items=cart_items)
+    print(cart_items)
+    subtotal =sum([i.quantity*i.product.price for i in cart_items])
+  
+    return render_template("shop/cart.html", cart_items=cart_items , subtotal=subtotal)
 
 
 @shop_bp.route("/update_cart", methods=["POST"])
@@ -141,15 +158,22 @@ def update_cart():
         return jsonify({"success": False, "message": "Session expired. Please refresh and try again."}), 400
 
     cart_id = session_manager.get_cart(session_token)
+
     if not cart_id:
         return jsonify({"success": False, "message": "Cart not found."}), 404
 
     data = request.get_json()
     quantities = data.get("quantities", {})
-
+    errored =  False
+    print("data from modify cart",data)
     for product_id, quantity in quantities.items():
-        session_manager.update_cart_item(cart_id, int(product_id), int(quantity))
-
+        if session_manager.verify_available_stock(int(product_id) , int(quantity)):
+            session_manager.update_cart_item(cart_id, int(product_id), int(quantity))
+        else:
+            LOG.SHOP_LOGGER.error(f"from {session_token}: avaliable stock exceeded for product id {product_id} {quantity}")
+            errored = True
+    if errored:
+        return jsonify({"success": True, "message": "Cart updated but some items failed."})
     return jsonify({"success": True, "message": "Cart updated successfully."})
 
 
@@ -205,6 +229,7 @@ def api_process_payment():
         order.update_order(order.order.id , status =status)
     if status == 'paid':
         cart_status = session_manager.update_cart(cart_id=cart_id , attribute="is_active" , new_value=False)
+        order.update_stock(order_id = order.order.id)
         return jsonify({"message": "success"}) , 200
     return jsonify({"message": f"Payment request sent for ksh: {amount} to +{phone}."}) , 200
 

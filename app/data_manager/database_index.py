@@ -25,7 +25,9 @@ class Database:
         vendor = self.session.query(VendorModel).filter_by(id=vendor_id).first()
         if vendor:
             for key, value in update_data.items():
-                setattr(vendor, key, value)
+                if hasattr(vendor , key):
+                    setattr(vendor, key, value)
+        
             self.session.commit()
             return True
         return False
@@ -43,7 +45,10 @@ class Database:
         if not product:
             return f"No prodict with id {product_id}"
         for k ,v in product_details.items():
+
             setattr(product , k , v)
+        self.session.commit()
+
         return "Product modified"
     
     def get_vendor_products(self, vendor_id):

@@ -1,139 +1,282 @@
 {% extends "shop/base2.html" %}
-
-{% block title %}Checkout{% endblock %}
-
 {% block content %}
 <div class="checkout-container">
-    <h2 class="checkout-title">Checkout</h2>
+    <h2 class="checkout-title">Checkout Summary</h2>
     
-    <table class="checkout-table">
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Modify</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for category, items in cart_summary.items() %}
-                {% if category != "TotalCost" %}
-                    <tr>
-                        <td rowspan="{{ items|length }}" class="category-cell">{{ category }}</td>
-                        {% for item in items %}
-                            {% if not loop.first %}<tr>{% endif %}
-                                <td class="product-name">{{ item["name"] }}</td>
-                                <td class="qty-cell">{{ item["quantity"] }}</td>
-                                <td class="price-cell">${{ item["price"] }}</td>
-                                <td>
-                                    <a href="{{ url_for('shop.specific_product', product_id=item['product_id']) }}" class="modify-btn">
-                                        <i class="fa fa-edit"></i> Modify
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                {% endif %}
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" class="total-label">Total Cost:</td>
-                <td colspan="2" class="total-amount">${{ cart_summary["TotalCost"] }}</td>
-            </tr>
-        </tfoot>
-    </table>
+    <div class="checkout-table-container">
+        <table class="checkout-table">
+            <thead>
+                <tr>
+                    <th class="category-header">Category</th>
+                    <th class="product-header">Product</th>
+                    <th class="qty-header">Qty</th>
+                    <th class="price-header">Price</th>
+                    <th class="action-header">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category, items in cart_summary.items() %}
+                    {% if category != "TotalCost" %}
+                        <tr class="category-row">
+                            <td rowspan="{{ items|length }}" class="category-cell">
+                                <span class="category-name">{{ category }}</span>
+                            </td>
+                            {% for item in items %}
+                                {% if not loop.first %}<tr class="product-row">{% endif %}
+                                    <td class="product-cell">
+                                        <span class="product-name">{{ item["name"] }}</span>
+                                    </td>
+                                    <td class="qty-cell">{{ item["quantity"] }}</td>
+                                    <td class="price-cell">${{ "%.2f"|format(item["price"]) }}</td>
+                                    <td class="action-cell">
+                                        <a href="{{ url_for('shop.specific_product', product_id=item['product_id']) }}" 
+                                           class="modify-btn"
+                                           aria-label="Modify {{ item['name'] }}">
+                                            <i class="fas fa-pencil-alt"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="3" class="total-label">Total:</td>
+                    <td colspan="2" class="total-amount">${{ "%.2f"|format(cart_summary["TotalCost"]) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 
     <div class="checkout-actions">
-        <a href="{{ url_for('shop.process_payment') }}" class="checkout-btn">Proceed to Payment</a>
+        <a href="{{ url_for('shop.shop_home') }}" class="continue-btn">
+            <i class="fas fa-arrow-left"></i> Continue Shopping
+        </a>
+        <a href="{{ url_for('shop.process_payment') }}" class="payment-btn">
+            Proceed to Payment <i class="fas fa-lock"></i>
+        </a>
     </div>
 </div>
+
 <style>
-    .checkout-container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
+/* ===== Checkout Page Styles ===== */
+.checkout-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
 }
 
 .checkout-title {
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 600;
     text-align: center;
-    font-size: 2rem;
-    margin-bottom: 20px;
+}
+
+.checkout-table-container {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 2rem;
 }
 
 .checkout-table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    overflow: hidden;
+    background: white;
 }
 
-.checkout-table th,
-.checkout-table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-    text-align: center;
-}
-
-.checkout-table thead th {
-    background: #007bff;
+.checkout-table th {
+    background-color: var(--primary-color);
     color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+}
+
+.checkout-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
 }
 
 .category-cell {
-    font-weight: bold;
-    background: #f8f9fa;
+    background-color: var(--bg-light);
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.category-name {
+    display: inline-block;
+    transform: rotate(-90deg);
+    transform-origin: left top;
+    white-space: nowrap;
+    position: absolute;
+    left: 1rem;
+    margin-top: -0.5rem;
+}
+
+.product-cell {
+    position: relative;
 }
 
 .product-name {
-    text-align: left;
+    font-weight: 500;
+    color: var(--text-dark);
 }
 
-.qty-cell,
+.qty-cell {
+    text-align: center;
+    color: var(--text-medium);
+}
+
 .price-cell {
-    font-weight: bold;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.action-cell {
+    text-align: right;
 }
 
 .modify-btn {
-    display: inline-block;
-    padding: 6px 12px;
-    background: #ffc107;
-    color: black;
+    color: var(--primary-color);
     text-decoration: none;
-    border-radius: 4px;
     font-size: 0.9rem;
-    transition: background 0.3s ease;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .modify-btn:hover {
-    background: #e0a800;
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+.modify-btn i {
+    font-size: 0.8rem;
+}
+
+.total-row {
+    background-color: var(--bg-light);
+}
+
+.total-label {
+    font-weight: 600;
+    text-align: right;
+    color: var(--text-dark);
+}
+
+.total-amount {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1rem;
 }
 
 .checkout-actions {
-    text-align: center;
-    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
-.checkout-btn {
-    display: inline-block;
-    background: #28a745;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
+.continue-btn, .payment-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: 1.1rem;
-    transition: background 0.3s ease;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
 }
 
-.checkout-btn:hover {
-    background: #218838;
+.continue-btn {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
 }
 
-.checkout-table tbody tr:hover {
-    background: #f1f1f1;
+.continue-btn:hover {
+    background-color: var(--bg-light);
 }
 
+.payment-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.payment-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== Responsive Styles ===== */
+@media (max-width: 768px) {
+    .checkout-table th, 
+    .checkout-table td {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .category-name {
+        transform: none;
+        position: static;
+        margin: 0;
+    }
+    
+    .checkout-actions {
+        flex-direction: column;
+    }
+    
+    .continue-btn, 
+    .payment-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkout-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .modify-btn span {
+        display: none;
+    }
+    
+    .modify-btn i {
+        margin-right: 0;
+    }
+}
+@media (max-width: 480px) {
+    /* Stack table rows for better mobile viewing */
+    .checkout-table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+    }
+    
+    .checkout-table td {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: none;
+    }
+    
+    .checkout-table td:before {
+        content: attr(data-label);
+        font-weight: 500;
+        margin-right: 1rem;
+    }
+    
+  
+}
 </style>
 {% endblock %}

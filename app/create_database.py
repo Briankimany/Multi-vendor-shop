@@ -28,8 +28,6 @@ def reset_table(table_name: str):
             session.rollback()
             print(f"Error resetting table {table_name}: {e}")
 
-reset_table("user_table")
-# reset_table("carts")
 
 def init_db():
     from models.session_tracking import SessionTracking
@@ -47,5 +45,4 @@ def init_db():
     )  
     
     Base.metadata.create_all(bind=engine)
-init_db()
 
