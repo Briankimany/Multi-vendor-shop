@@ -322,6 +322,8 @@ class OrderManager:
     @staticmethod
     def collect_payment(phone , amount ,orderid):
         LOG.ORDER_LOGGER.info(f"Initiating payment collection for session : {orderid}, Phone: {phone}, Amount: {amount}")
+        response = None
+        code = None
 
         try:
             config = JSONConfig(json_path='config.json')
@@ -369,7 +371,7 @@ class OrderManager:
             return 'pending'
 
         except Exception as e:
-            LOG.ORDER_LOGGER.error(f"Exception occurred in payment collection for session: {orderid}: {e}")
+            LOG.ORDER_LOGGER.error(f"Exception occurred in payment collection for session: {orderid}: {e} server response: {response} Code: {code}")
             return None
 
        

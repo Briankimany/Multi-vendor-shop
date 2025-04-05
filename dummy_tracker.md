@@ -25,6 +25,7 @@
 - **[ ] 19.** Fix the vendor/order endpoint
 - **[ ] 20.** Fix vendor withdrawal history endpoint
 - **[ ] 21.** Fix endpoint for reports
+- **[ ] 22.** Add account authentication on creation of account ie send a token to verify account and add a rate limit
 
 ---
 
