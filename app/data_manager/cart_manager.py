@@ -377,7 +377,7 @@ class OrderManager:
             return 'pending'
 
         except Exception as e:
-            LOG.ORDER_LOGGER.error(f"Exception occurred in payment collection for session: {orderid}: {e} server response: {response} Code: {code}")
+            LOG.ORDER_LOGGER.error(f"Exception occurred in payment collection for session: {orderid}: {e} Latest response:{response} server response: {response} Code: {code}")
             return None
 
        
